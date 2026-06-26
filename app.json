@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "garageflow-tmp",
-    "slug": "garageflow-tmp",
+    "name": "Garage Flow",
+    "slug": "garageflow",
+    "scheme": "garageflow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +21,21 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Satoshi-Regular.ttf",
+            "./assets/fonts/Satoshi-Medium.ttf",
+            "./assets/fonts/Satoshi-Bold.ttf",
+            "./assets/fonts/Satoshi-Black.ttf"
+          ]
+        }
+      ]
+    ]
   }
 }
