@@ -26,8 +26,8 @@ export type Job = {
 export type TimelineItem =
   | { kind: "system"; text: string; tone: "purple" | "green"; icon?: "shield-check" | "check-circle" }
   | { kind: "text"; by: Person; text: string; time: string }
-  | { kind: "photo"; by: Person; tag: string; time: string }
-  | { kind: "voice"; by: Person; dur: string; time: string }
+  | { kind: "photo"; by: Person; tag?: string; time: string; uri?: string }
+  | { kind: "voice"; by: Person; dur: string; time: string; uri?: string }
   | { kind: "part"; by: Person; name: string; qty: number; price: number; time: string };
 
 export type CatalogueItem = {

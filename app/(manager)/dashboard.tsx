@@ -33,7 +33,7 @@ export default function ManagerDashboard() {
           <SearchBar placeholder="Search plate, customer, or phone…" />
         </View>
 
-        <View className="mt-[12px] flex-row flex-wrap px-[18px]" style={{ gap: 10 }}>
+        <View className="mt-[16px] flex-row flex-wrap px-[18px]" style={{ gap: 10 }}>
           <View className="flex-row" style={{ gap: 10, width: "100%" }}>
             <Metric num="8" label="Jobs in progress" />
             <Metric num="3" label="Awaiting my approval" bg="#F2ECFE" numColor="#6C2BD9" labelColor="#6C2BD9" />
@@ -44,7 +44,7 @@ export default function ManagerDashboard() {
           </View>
         </View>
 
-        <View className="mt-[16px] flex-row items-center justify-between px-[18px]">
+        <View className="mt-[24px] flex-row items-center justify-between px-[18px]">
           <Txt className="font-bold text-[18px]" style={{ letterSpacing: -0.3 }}>
             Active jobs
           </Txt>
@@ -60,7 +60,7 @@ export default function ManagerDashboard() {
           <ActiveJobCard id="j2" plate="GJ 01 KK 0921" title="Hyundai Creta" techInitials="SV" techColor="d" techName="Suresh V." progress={40} status="AWAITING PART" tone="amber" barColor="#F59E0B" />
         </ScrollView>
 
-        <View className="mt-[14px] px-[18px]">
+        <View className="mt-[22px] px-[18px]">
           <Card className="flex-row items-center p-[12px]" style={{ gap: 12 }} onPress={() => router.push("/approval/j3")}>
             <CarThumb width={46} height={46} radius={11} iconSize={21} />
             <View className="flex-1">

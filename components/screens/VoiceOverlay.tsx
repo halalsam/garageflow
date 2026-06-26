@@ -1,49 +1,66 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, Pressable, View } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Txt } from "@/components/ui/Txt";
 import { Waveform } from "@/components/chat/Chat";
 import { Icon } from "@/components/Icon";
 import { fmtDuration } from "@/components/chat/useChat";
+import { useVoiceRecorder } from "@/components/chat/useVoiceRecorder";
 
 const BAR_COUNT = 18;
 const randomBars = () => Array.from({ length: BAR_COUNT }, () => 1 + Math.floor(Math.random() * 6));
 
-// T5 · Voice note recording overlay.
-// Simulated capture in local state: counts elapsed seconds and animates the
-// waveform while open, then hands the duration back via `onSend`.
+// T5 · Voice note recording overlay (tap-the-mic path).
+// Records real audio via expo-audio: opens -> starts recording, tap to send,
+// tap to cancel discards it.
 export function VoiceOverlay({
   visible,
-  onSend,
+  onSendVoice,
   onCancel,
 }: {
   visible: boolean;
-  onSend: (seconds: number) => void;
+  onSendVoice: (uri: string, seconds: number) => void;
   onCancel: () => void;
 }) {
-  const [seconds, setSeconds] = useState(0);
+  const rec = useVoiceRecorder();
   const [bars, setBars] = useState<number[]>(randomBars);
-  const secRef = useRef(0);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (visible && !startedRef.current) {
+      startedRef.current = true;
+      rec.start().then((ok) => {
+        if (!ok) onCancel();
+      });
+    }
+    if (!visible) startedRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) return;
-    secRef.current = 0;
-    setSeconds(0);
-    setBars(randomBars());
-
-    const tick = setInterval(() => {
-      secRef.current += 1;
-      setSeconds(secRef.current);
-    }, 1000);
     const wave = setInterval(() => setBars(randomBars()), 220);
-
-    return () => {
-      clearInterval(tick);
-      clearInterval(wave);
-    };
+    return () => clearInterval(wave);
   }, [visible]);
 
+  const seconds = Math.round(rec.durationMillis / 1000);
+
+  const send = async () => {
+    const secs = Math.round(rec.durationMillis / 1000);
+    const uri = await rec.stop();
+    if (uri && secs >= 1) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onSendVoice(uri, secs);
+    } else onCancel();
+  };
+
+  const cancel = async () => {
+    await rec.stop();
+    onCancel();
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={cancel}>
       <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(20,16,12,0.55)" }}>
         <View className="flex-1 items-center justify-center" style={{ paddingBottom: 40 }}>
           <View
@@ -56,7 +73,7 @@ export function VoiceOverlay({
             {fmtDuration(seconds)}
           </Txt>
           <Waveform height={40} gap={3} color="#FFFFFF" bars={bars} />
-          <Pressable onPress={onCancel} hitSlop={10} className="mt-[30px] flex-row items-center" style={{ gap: 6 }}>
+          <Pressable onPress={cancel} hitSlop={10} className="mt-[30px] flex-row items-center" style={{ gap: 6 }}>
             <Icon name="x-circle" size={16} weight="fill" color="rgba(255,255,255,0.85)" />
             <Txt className="font-bold text-[13px]" style={{ color: "rgba(255,255,255,0.8)" }}>
               Tap to cancel
@@ -64,7 +81,7 @@ export function VoiceOverlay({
           </Pressable>
         </View>
 
-        <Pressable onPress={() => onSend(secRef.current)}>
+        <Pressable onPress={send}>
           <View className="flex-row items-center bg-orange px-[13px] pb-[16px] pt-[11px]" style={{ gap: 9 }}>
             <View className="flex-1 flex-row items-center rounded-full px-[16px] py-[12px]" style={{ backgroundColor: "rgba(255,255,255,0.22)", gap: 7 }}>
               <Icon name="circle" size={10} color="#fff" weight="fill" />

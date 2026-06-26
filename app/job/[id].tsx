@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Txt } from "@/components/ui/Txt";
@@ -25,10 +26,17 @@ export default function JobTimeline() {
 
   // Who the current user is on this screen, used to right-align their messages.
   const me = isManager ? PEOPLE.rashid : PEOPLE.arjun;
-  const { messages, sendText, sendVoice } = useChat(done ? TIMELINE_DONE : TIMELINE, me);
+  const { messages, sendText, sendVoice, sendPhoto } = useChat(done ? TIMELINE_DONE : TIMELINE, me);
 
   const [sheet, setSheet] = useState(false);
   const [voice, setVoice] = useState(false);
+
+  const pickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]) sendPhoto(res.assets[0].uri);
+  };
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-[#F0EEF6]">
@@ -76,7 +84,9 @@ export default function JobTimeline() {
           smiley={!isManager}
           onSend={sendText}
           onAttach={() => setSheet(true)}
-          onMic={() => setVoice(true)}
+          onPickPhoto={pickPhoto}
+          onTapMic={() => setVoice(true)}
+          onSendVoice={sendVoice}
         />
       </KeyboardAvoidingView>
 
@@ -84,9 +94,9 @@ export default function JobTimeline() {
       <VoiceOverlay
         visible={voice}
         onCancel={() => setVoice(false)}
-        onSend={(seconds) => {
+        onSendVoice={(uri, seconds) => {
           setVoice(false);
-          sendVoice(seconds);
+          sendVoice(uri, seconds);
         }}
       />
     </SafeAreaView>

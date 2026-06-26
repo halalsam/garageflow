@@ -33,15 +33,23 @@ export function useChat(initial: TimelineItem[], me: Person) {
   );
 
   const sendVoice = useCallback(
-    (seconds: number) => {
-      if (seconds < 1) return;
+    (uri: string, seconds: number) => {
+      if (!uri || seconds < 1) return;
       setMessages((prev) => [
         ...prev,
-        { kind: "voice", by: me, dur: fmtDuration(seconds), time: nowLabel() },
+        { kind: "voice", by: me, dur: fmtDuration(seconds), time: nowLabel(), uri },
       ]);
     },
     [me],
   );
 
-  return { messages, sendText, sendVoice };
+  const sendPhoto = useCallback(
+    (uri: string) => {
+      if (!uri) return;
+      setMessages((prev) => [...prev, { kind: "photo", by: me, time: nowLabel(), uri }]);
+    },
+    [me],
+  );
+
+  return { messages, sendText, sendVoice, sendPhoto };
 }

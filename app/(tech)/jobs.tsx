@@ -25,7 +25,7 @@ export default function TechJobs() {
       <View className="px-[18px]">
         <SearchBar placeholder="Search by plate number…" />
       </View>
-      <View className="mt-[12px]">
+      <View className="pb-[14px] pt-[14px]">
         <ChipRow
           className="pl-[18px]"
           items={["All · 4", "In Progress", "Completed", "Today"]}
@@ -36,7 +36,7 @@ export default function TechJobs() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 18, paddingTop: 13, gap: 12 }}
+        contentContainerStyle={{ padding: 18, paddingTop: 4, gap: 12 }}
       >
         {JOBS.map((j) => (
           <JobCard key={j.id} job={j} />

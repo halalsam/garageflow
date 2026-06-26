@@ -36,6 +36,19 @@
             "./assets/fonts/Satoshi-Black.ttf"
           ]
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Garage Flow to record voice notes for jobs."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Garage Flow to attach photos to jobs.",
+          "cameraPermission": "Allow Garage Flow to take job photos."
+        }
       ]
     ]
   }
