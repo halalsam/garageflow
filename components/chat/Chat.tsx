@@ -29,20 +29,34 @@ export function SystemPill({
   );
 }
 
-// A left-aligned message row with avatar + bubble content.
+// A message row. Incoming messages sit left with an avatar; `own` messages
+// (authored by the current user) sit right with no avatar.
+//
+// The wrapper uses `alignItems: flex-start/flex-end` so each bubble hugs its
+// content instead of stretching to the full 80% column — that stretch was what
+// made short messages look elongated.
 export function Row({
   initials,
   color,
+  own = false,
   children,
 }: {
   initials: string;
   color: string;
+  own?: boolean;
   children: React.ReactNode;
 }) {
+  if (own) {
+    return (
+      <View className="flex-row items-end justify-end">
+        <View style={{ maxWidth: "80%", alignItems: "flex-end" }}>{children}</View>
+      </View>
+    );
+  }
   return (
     <View className="flex-row items-end" style={{ gap: 8 }}>
       <Avatar initials={initials} color={color} size={28} />
-      <View style={{ maxWidth: "80%" }}>{children}</View>
+      <View style={{ maxWidth: "80%", alignItems: "flex-start" }}>{children}</View>
     </View>
   );
 }
@@ -50,15 +64,19 @@ export function Row({
 export function Bubble({
   children,
   className = "",
+  own = false,
   style,
 }: {
   children: React.ReactNode;
   className?: string;
+  own?: boolean;
   style?: any;
 }) {
+  // Own bubbles flip the small corner to the top-right and tint orange.
+  const tone = own ? "bg-orange rounded-tr-[5px]" : "bg-white rounded-tl-[5px]";
   return (
     <View
-      className={`rounded-[15px] rounded-tl-[5px] bg-white px-[12px] py-[9px] ${className}`}
+      className={`rounded-[15px] px-[12px] py-[9px] ${tone} ${className}`}
       style={[{ shadowColor: "#281E14", shadowOpacity: 0.07, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }, style]}
     >
       {children}
@@ -66,8 +84,17 @@ export function Bubble({
   );
 }
 
-export function BubbleTime({ children, className = "" }: { children: string; className?: string }) {
-  return <Txt className={`mt-[4px] text-[9px] font-medium text-[#A1A1AA] ${className}`}>{children}</Txt>;
+export function BubbleTime({
+  children,
+  own = false,
+  className = "",
+}: {
+  children: string;
+  own?: boolean;
+  className?: string;
+}) {
+  const color = own ? "text-white/70" : "text-[#A1A1AA]";
+  return <Txt className={`mt-[4px] self-end text-[9px] font-medium ${color} ${className}`}>{children}</Txt>;
 }
 
 // Static voice-note waveform.

@@ -54,8 +54,8 @@ export const PEOPLE = {
   ramesh: { name: "Ramesh Nair", initials: "Rn", color: "e" },
   rakesh: { name: "Rakesh Kumar", initials: "RK", color: "c" },
   sneha: { name: "Sneha Desai", initials: "SD", color: "b" },
-  priya: { name: "Priya Sharma", initials: "PS", color: "b" },
-  vikram: { name: "Vikram Khanna", initials: "VK", color: "f" },
+  rashid: { name: "Rashid Pathan", initials: "RP", color: "b" },
+  kamal: { name: "kamal khushwaha", initials: "VK", color: "f" },
 } satisfies Record<string, Person>;
 
 export const WORKSHOP = "Main Street Motors";
@@ -157,8 +157,8 @@ export const SERVICES: CatalogueItem[] = [
 ];
 
 export const TEAM: TeamMember[] = [
-  { ...PEOPLE.vikram, phone: "+91 98200 11223", role: "admin", roleLabel: "Admin", roleIcon: "crown-simple" },
-  { ...PEOPLE.priya, phone: "+91 98201 44556", role: "manager", roleLabel: "Manager", roleIcon: "shield-check" },
+  { ...PEOPLE.kamal, phone: "+91 98200 11223", role: "admin", roleLabel: "Admin", roleIcon: "crown-simple" },
+  { ...PEOPLE.rashid, phone: "+91 98201 44556", role: "manager", roleLabel: "Manager", roleIcon: "shield-check" },
   { ...PEOPLE.arjun, role: "tech", roleLabel: "Technician", roleIcon: "wrench", active: true },
   { ...PEOPLE.suresh, role: "tech", roleLabel: "Technician", roleIcon: "wrench", active: true },
   { ...PEOPLE.ramesh, role: "tech", roleLabel: "Technician", roleIcon: "wrench", inactive: true },
