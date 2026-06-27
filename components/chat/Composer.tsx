@@ -47,10 +47,14 @@ export function Composer({
   const durationRef = useRef(0);
   durationRef.current = rec.durationMillis;
   const micX = useRef(new Animated.Value(0)).current;
+  const micScale = useRef(new Animated.Value(1)).current;
   const latest = useRef({ onTapMic, onSendVoice, start: rec.start, stop: rec.stop });
   latest.current = { onTapMic, onSendVoice, start: rec.start, stop: rec.stop };
 
-  const resetMic = () => Animated.spring(micX, { toValue: 0, useNativeDriver: true, speed: 20 }).start();
+  const resetMic = () => {
+    Animated.spring(micX, { toValue: 0, useNativeDriver: true, speed: 20 }).start();
+    Animated.spring(micScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+  };
 
   const submit = () => {
     if (!hasText) return;
@@ -98,6 +102,7 @@ export function Composer({
           if (!ok) return;
           isHoldRef.current = true;
           setHolding(true);
+          Animated.spring(micScale, { toValue: 1.7, useNativeDriver: true, speed: 16, bounciness: 9 }).start();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }, HOLD_DELAY);
       },
@@ -154,7 +159,7 @@ export function Composer({
           <Icon name="paper-plane-tilt" size={20} weight="fill" color="#fff" />
         </Pressable>
       ) : (
-        <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: micX }] }}>
+        <Animated.View {...pan.panHandlers} style={{ zIndex: 10, transform: [{ translateX: micX }, { scale: micScale }] }}>
           <View className={`h-[44px] w-[44px] items-center justify-center rounded-full ${holding ? "bg-[#EF4444]" : "bg-orange"}`}>
             <Icon name="microphone" size={21} weight="fill" color="#fff" />
           </View>

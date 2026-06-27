@@ -30,6 +30,10 @@ export default function RootLayout() {
             <Stack.Screen name="job/new" options={{ presentation: "modal" }} />
             <Stack.Screen name="approval/[id]" />
             <Stack.Screen name="invoice/[id]" />
+            <Stack.Screen name="finance/gst" />
+            <Stack.Screen name="finance/expenses" />
+            <Stack.Screen name="finance/ledgers" />
+            <Stack.Screen name="finance/ledger/[party]" />
           </Stack>
         </RoleProvider>
       </SafeAreaProvider>

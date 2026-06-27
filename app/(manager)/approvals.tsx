@@ -1,5 +1,5 @@
-import { ApprovalScreen } from "@/components/screens/ApprovalScreen";
+import { ApprovalsScreen } from "@/components/screens/ApprovalsScreen";
 
 export default function Approvals() {
-  return <ApprovalScreen />;
+  return <ApprovalsScreen />;
 }
