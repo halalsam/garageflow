@@ -8,15 +8,17 @@ import type { JobLine } from "./useNewJob";
 // catalogue or hand-typed), an editable ₹ amount, and a remove control.
 export function LineItemRow({
   line,
+  first,
   onChangeAmount,
   onRemove,
 }: {
   line: JobLine;
+  first?: boolean;
   onChangeAmount: (amount: number) => void;
   onRemove: () => void;
 }) {
   return (
-    <View className="flex-row items-center justify-between border-t border-line py-[10px] first:border-t-0">
+    <View className={`flex-row items-center justify-between py-[10px] ${first ? "" : "border-t border-line"}`}>
       <View className="flex-1 pr-[10px]">
         <Txt className="font-bold text-[13px]">{line.label}</Txt>
         {line.note ? <Txt className="mt-[3px] font-medium text-[11px] text-muted">{line.note}</Txt> : null}
