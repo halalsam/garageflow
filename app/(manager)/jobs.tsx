@@ -21,7 +21,15 @@ export default function ManagerJobs() {
 
   return (
     <Screen>
-      <TopBar title="All Jobs" right={<HeaderIcon name="sliders" />} />
+      <TopBar
+        title="All Jobs"
+        right={
+          <View className="flex-row items-center" style={{ gap: 14 }}>
+            <HeaderIcon name="sliders" />
+            <HeaderIcon name="plus" onPress={() => router.push("/job/new")} />
+          </View>
+        }
+      />
       <View className="px-[18px]">
         <ChipRow
           items={[`All · ${count}`, "In Progress", "Review", "Done"]}
