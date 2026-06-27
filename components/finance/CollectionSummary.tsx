@@ -2,8 +2,8 @@ import { View } from "react-native";
 import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Icon, type IconName } from "@/components/Icon";
-import { inr, type MethodTotal, type PayMethod } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { MethodTotal, PayMethod } from "@/types/api";
 const METHOD_ICON: Record<PayMethod, IconName> = {
   Cash: "money",
   UPI: "device-mobile",

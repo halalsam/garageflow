@@ -11,10 +11,39 @@ import { Avatar } from "@/components/ui/Avatar";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { SystemPill } from "@/components/chat/Chat";
 import { Icon } from "@/components/Icon";
-import { getApproval, inr } from "@/data/mock";
-
+import { Loading, ErrorState } from "@/components/ui/QueryState";
+import { router } from "expo-router";
+import { Alert } from "react-native";
+import { useApproval } from "@/lib/api/hooks/queries";
+import { useDecideApproval } from "@/lib/api/hooks/mutations";
+import { inr } from "@/lib/format";
 export function ApprovalScreen({ id, back }: { id?: string; back?: boolean }) {
-  const approval = getApproval(id);
+  const { data: approval, isLoading, isError, refetch } = useApproval(id ?? "");
+  const decide = useDecideApproval(id ?? "");
+
+  const onDecision = (decision: "approve" | "decline") => {
+    if (decide.isPending) return;
+    decide.mutate(decision, {
+      onSuccess: () => router.back(),
+      onError: () => Alert.alert("Couldn't record decision", "Please try again."),
+    });
+  };
+  if (isLoading) {
+    return (
+      <Screen>
+        <TopBar title="Approval" back={back} right={<Badge label="REVIEW" tone="purple" />} />
+        <Loading label="Loading approval…" />
+      </Screen>
+    );
+  }
+  if (isError || !approval) {
+    return (
+      <Screen>
+        <TopBar title="Approval" back={back} right={<Badge label="REVIEW" tone="purple" />} />
+        <ErrorState onRetry={() => refetch()} />
+      </Screen>
+    );
+  }
   return (
     <Screen>
       <TopBar
@@ -73,8 +102,23 @@ export function ApprovalScreen({ id, back }: { id?: string; back?: boolean }) {
         <View className="mt-[16px]">
           <SectionLabel>RECORD CUSTOMER DECISION</SectionLabel>
           <View className="mt-[10px] flex-row" style={{ gap: 10 }}>
-            <Button label="Approve" variant="green" icon="check-circle" className="flex-1" />
-            <Button label="Decline" variant="ghost" icon="x-circle" className="flex-1 border-[#FADADA]" textClassName="text-[#DC2626]" />
+            <Button
+              label={decide.isPending ? "Saving…" : "Approve"}
+              variant="green"
+              icon="check-circle"
+              className="flex-1"
+              disabled={decide.isPending}
+              onPress={() => onDecision("approve")}
+            />
+            <Button
+              label="Decline"
+              variant="ghost"
+              icon="x-circle"
+              className="flex-1 border-[#FADADA]"
+              textClassName="text-[#DC2626]"
+              disabled={decide.isPending}
+              onPress={() => onDecision("decline")}
+            />
           </View>
           <View className="mt-[11px] flex-row items-center justify-center" style={{ gap: 5 }}>
             <Icon name="info" size={13} weight="fill" color="#6B7280" />

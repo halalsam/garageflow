@@ -1,8 +1,8 @@
 import { View } from "react-native";
 import { Txt } from "@/components/ui/Txt";
 import { Card } from "@/components/ui/Card";
-import { inr, type LedgerEntry } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { LedgerEntry } from "@/types/api";
 function EntryRow({ first, entry }: { first?: boolean; entry: LedgerEntry }) {
   const isDebit = entry.debit > 0;
   return (

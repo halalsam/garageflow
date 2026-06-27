@@ -23,6 +23,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "extra": {
+      "apiUrl": "http://192.168.0.106:3000/api"
+    },
     "plugins": [
       "expo-router",
       "expo-status-bar",

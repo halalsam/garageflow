@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Icon } from "@/components/Icon";
 import { InvoiceStatusBadge } from "@/components/finance/InvoiceStatusBadge";
-import { inr, statusFor, type Invoice } from "@/data/mock";
+import { inr } from "@/lib/format";
+import type { Invoice } from "@/types/api";
 
 // One row in the invoices list.
 export function InvoiceRow({ invoice, onPress }: { invoice: Invoice; onPress: () => void }) {
@@ -20,7 +21,7 @@ export function InvoiceRow({ invoice, onPress }: { invoice: Invoice; onPress: ()
           {invoice.customer} · {invoice.car}
         </Txt>
       </View>
-      <InvoiceStatusBadge status={statusFor(invoice)} />
+      <InvoiceStatusBadge status={invoice.status ?? "UNPAID"} />
     </Card>
   );
 }

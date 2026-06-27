@@ -10,26 +10,46 @@ import { CarThumb } from "@/components/ui/CarThumb";
 import { Button } from "@/components/ui/Button";
 import { Composer } from "@/components/chat/Composer";
 import { ChatFeed } from "@/components/chat/ChatFeed";
-import { useChat } from "@/components/chat/useChat";
 import { AddPartSheet } from "@/components/screens/AddPartSheet";
 import { VoiceOverlay } from "@/components/screens/VoiceOverlay";
+import { Loading, ErrorState } from "@/components/ui/QueryState";
 import { Icon } from "@/components/Icon";
-import { useRole } from "@/lib/role";
-import { getJob, JOBS, PEOPLE, TIMELINE, TIMELINE_DONE } from "@/data/mock";
+import { useAuth } from "@/lib/auth";
+import { useJob } from "@/lib/api/hooks/queries";
+import { useJobChat } from "@/lib/api/hooks/useJobChat";
+import { useUpdateJob } from "@/lib/api/hooks/mutations";
+import type { Person } from "@/types/api";
 
 export default function JobTimeline() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { role } = useRole();
-  const job = getJob(id) ?? JOBS[0];
-  const done = job.status === "COMPLETED";
+  const { user, role } = useAuth();
+  const { data: job, isLoading, isError, refetch } = useJob(id);
   const isManager = role !== "tech";
 
   // Who the current user is on this screen, used to right-align their messages.
-  const me = isManager ? PEOPLE.rashid : PEOPLE.arjun;
-  const { messages, sendText, sendVoice, sendPhoto } = useChat(done ? TIMELINE_DONE : TIMELINE, me);
+  const me: Person = user
+    ? { name: user.name, initials: user.initials, color: user.color }
+    : { name: "Me", initials: "?", color: "a" };
+  const { messages, sendText, sendVoice, sendPhoto } = useJobChat(id, job?.timeline ?? [], me);
+  const updateJob = useUpdateJob(id);
 
   const [sheet, setSheet] = useState(false);
   const [voice, setVoice] = useState(false);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView edges={["top"]} className="flex-1 bg-[#F0EEF6]">
+        <Loading label="Loading job…" />
+      </SafeAreaView>
+    );
+  }
+  if (isError || !job) {
+    return (
+      <SafeAreaView edges={["top"]} className="flex-1 bg-[#F0EEF6]">
+        <ErrorState onRetry={() => refetch()} />
+      </SafeAreaView>
+    );
+  }
 
   const pickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -68,7 +88,15 @@ export default function JobTimeline() {
             ) : (
               <>
                 <Button label="Pause" icon="pause" small className="flex-1 bg-[#FEF6E7]" textClassName="text-[#D97706]" />
-                <Button label="Complete" variant="green" icon="check" small className="flex-1" />
+                <Button
+                  label={job.status === "COMPLETED" ? "Completed" : updateJob.isPending ? "Saving…" : "Complete"}
+                  variant="green"
+                  icon="check"
+                  small
+                  className="flex-1"
+                  disabled={job.status === "COMPLETED" || updateJob.isPending}
+                  onPress={() => updateJob.mutate({ status: "COMPLETED", progress: 100 })}
+                />
               </>
             )}
           </View>
@@ -87,7 +115,7 @@ export default function JobTimeline() {
         />
       </KeyboardAvoidingView>
 
-      <AddPartSheet visible={sheet} onClose={() => setSheet(false)} />
+      <AddPartSheet jobId={job.id} visible={sheet} onClose={() => setSheet(false)} />
       <VoiceOverlay
         visible={voice}
         onCancel={() => setVoice(false)}

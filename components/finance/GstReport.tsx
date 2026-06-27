@@ -2,8 +2,9 @@ import { View } from "react-native";
 import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Icon } from "@/components/Icon";
-import { gstSummary, inr, MONTH_LABEL } from "@/data/mock";
-
+import { Loading, ErrorState } from "@/components/ui/QueryState";
+import { useGstReport } from "@/lib/api/hooks/queries";
+import { inr, MONTH_LABEL } from "@/lib/format";
 function Row({ first, label, hint, value, strong }: { first?: boolean; label: string; hint?: string; value: string; strong?: boolean }) {
   return (
     <View
@@ -23,7 +24,9 @@ function Row({ first, label, hint, value, strong }: { first?: boolean; label: st
 // GST output-tax summary for the period — what was collected on sales and is
 // payable in GSTR-3B. 18% intra-state splits into CGST 9% + SGST 9%.
 export function GstReport() {
-  const g = gstSummary();
+  const { data: g, isLoading, isError, refetch } = useGstReport();
+  if (isLoading) return <Loading label="Loading GST report…" />;
+  if (isError || !g) return <ErrorState onRetry={() => refetch()} />;
   return (
     <Card className="p-[15px]">
       <View className="flex-row items-center" style={{ gap: 8 }}>

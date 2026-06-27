@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Icon } from "@/components/Icon";
 import { InvoiceStatusBadge } from "@/components/finance/InvoiceStatusBadge";
-import { WORKSHOP, inr, statusFor, type Invoice } from "@/data/mock";
+import { WORKSHOP, inr } from "@/lib/format";
+import type { Invoice } from "@/types/api";
 
 function Line({ first, label, value }: { first?: boolean; label: string; note?: string; value: string }) {
   return (
@@ -40,7 +41,7 @@ export function InvoiceReceipt({ invoice }: { invoice: Invoice }) {
             <Txt className="font-medium text-[10px] text-muted">GSTIN 27ABCDE1234F1Z5</Txt>
           </View>
         </View>
-        <InvoiceStatusBadge status={statusFor(invoice)} />
+        <InvoiceStatusBadge status={invoice.status ?? "UNPAID"} />
       </View>
 
       <View className="mt-[13px] border-t border-line pt-[11px]">

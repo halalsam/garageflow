@@ -8,35 +8,31 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Metric } from "@/components/ui/Metric";
 import { RolePill } from "@/components/ui/RolePill";
 import { ListRow } from "@/components/ui/ListRow";
-import { useRole } from "@/lib/role";
-import { WORKSHOP } from "@/data/mock";
+import { useAuth } from "@/lib/auth";
+import { WORKSHOP } from "@/lib/format";
+import type { Role } from "@/types/api";
 
-const PROFILES = {
+// Per-role metric placeholders + badge tint (identity comes from the auth user).
+const ROLE_META: Record<Role, { bg: string; color: string; metrics: { num: string; label: string }[] }> = {
   tech: {
-    name: "Arjun Patel",
-    initials: "AP",
-    color: "a",
-    role: { icon: "wrench" as const, label: "Technician", bg: "#FFF6F2", color: "#FF5A1F" },
+    bg: "#FFF6F2",
+    color: "#FF5A1F",
     metrics: [
       { num: "4", label: "Jobs assigned" },
       { num: "2", label: "In progress" },
     ],
   },
   manager: {
-    name: "Priya Sharma",
-    initials: "PS",
-    color: "b",
-    role: { icon: "shield-check" as const, label: "Manager", bg: "#F2ECFE", color: "#6C2BD9" },
+    bg: "#F2ECFE",
+    color: "#6C2BD9",
     metrics: [
       { num: "12", label: "Jobs today" },
       { num: "3", label: "Pending approvals" },
     ],
   },
   admin: {
-    name: "Vikram Khanna",
-    initials: "VK",
-    color: "f",
-    role: { icon: "crown-simple" as const, label: "Owner", bg: "#F2ECFE", color: "#6C2BD9" },
+    bg: "#F2ECFE",
+    color: "#6C2BD9",
     metrics: [
       { num: "₹2.4L", label: "Revenue this week" },
       { num: "5", label: "Team members" },
@@ -45,26 +41,31 @@ const PROFILES = {
 };
 
 export function ProfileScreen() {
-  const { role } = useRole();
-  const p = PROFILES[role];
+  const { user, role, logout } = useAuth();
+  const meta = ROLE_META[role];
+
+  const signOut = async () => {
+    await logout();
+    router.replace("/");
+  };
 
   return (
     <Screen>
       <TopBar title="Profile" right={<HeaderIcon name="gear-six" />} />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24 }}>
         <Card className="items-center" style={{ gap: 7 }}>
-          <Avatar initials={p.initials} color={p.color} size={72} />
+          <Avatar initials={user?.initials ?? "?"} color={user?.color ?? "a"} size={72} />
           <View className="items-center">
             <Txt className="font-bold text-[18px]" style={{ letterSpacing: -0.3 }}>
-              {p.name}
+              {user?.name ?? "—"}
             </Txt>
             <Txt className="mt-[4px] font-medium text-[13px] text-muted">{WORKSHOP} · since 2021</Txt>
           </View>
-          <RolePill {...p.role} />
+          {user ? <RolePill icon={user.roleIcon} label={user.roleLabel} bg={meta.bg} color={meta.color} /> : null}
         </Card>
 
         <View className="mt-[10px] flex-row" style={{ gap: 10 }}>
-          {p.metrics.map((m) => (
+          {meta.metrics.map((m) => (
             <Metric key={m.label} num={m.num} label={m.label} />
           ))}
         </View>
@@ -85,7 +86,7 @@ export function ProfileScreen() {
             iconColor="#DC2626"
             label="Log out"
             labelColor="#DC2626"
-            onPress={() => router.replace("/")}
+            onPress={signOut}
           />
         </Card>
 

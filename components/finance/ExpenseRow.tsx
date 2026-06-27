@@ -2,8 +2,8 @@ import { View } from "react-native";
 import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Icon, type IconName } from "@/components/Icon";
-import { inr, type Expense, type ExpenseCategory } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { Expense, ExpenseCategory } from "@/types/api";
 const CATEGORY: Record<ExpenseCategory, { icon: IconName; bg: string; fg: string }> = {
   Parts: { icon: "package", bg: "#FFF1EC", fg: "#FF5A1F" },
   Salaries: { icon: "users-three", bg: "#EAF2FF", fg: "#2563EB" },

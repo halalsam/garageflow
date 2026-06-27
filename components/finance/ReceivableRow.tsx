@@ -3,11 +3,13 @@ import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Plate } from "@/components/ui/Plate";
 import { Icon } from "@/components/Icon";
-import { balanceFor, inr, type Invoice } from "@/data/mock";
+import { inr } from "@/lib/format";
+import type { Invoice } from "@/types/api";
 
 // One outstanding-balance row. Tapping it opens the invoice to record payment.
 export function ReceivableRow({ invoice, onPress }: { invoice: Invoice; onPress: () => void }) {
-  const balance = balanceFor(invoice);
+  // Balance is derived server-side (falls back to total if a list omits it).
+  const balance = invoice.balance ?? invoice.total;
   return (
     <Card className="flex-row items-center p-[12px]" style={{ gap: 11 }} onPress={onPress}>
       <View className="flex-1">

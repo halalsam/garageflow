@@ -10,9 +10,13 @@ import { SearchBar } from "@/components/ui/SearchBar";
 import { CarThumb } from "@/components/ui/CarThumb";
 import { ActiveJobCard } from "@/components/screens/ActiveJobCard";
 import { Icon } from "@/components/Icon";
-import { APPROVALS, WORKSHOP, inr, outstandingTotal } from "@/data/mock";
-
+import { useDashboard } from "@/lib/api/hooks/queries";
+import { useAuth } from "@/lib/auth";
+import { WORKSHOP, inr } from "@/lib/format";
 export default function ManagerDashboard() {
+  const { user } = useAuth();
+  const { data } = useDashboard();
+  const firstName = user?.name?.split(" ")[0] ?? "there";
   return (
     <Screen>
       <View className="flex-row items-center justify-between px-[18px] pb-[10px] pt-[6px]">
@@ -22,10 +26,10 @@ export default function ManagerDashboard() {
             <Txt className="font-medium text-[13px] text-muted">{WORKSHOP}</Txt>
           </View>
           <Txt className="font-black text-[24px]" style={{ letterSpacing: -0.5 }}>
-            Good morning, Priya
+            Good morning, {firstName}
           </Txt>
         </View>
-        <Avatar initials="PS" color="b" />
+        <Avatar initials={user?.initials ?? "?"} color={user?.color ?? "b"} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
@@ -35,12 +39,12 @@ export default function ManagerDashboard() {
 
         <View className="mt-[16px] flex-row flex-wrap px-[18px]" style={{ gap: 10 }}>
           <View className="flex-row" style={{ gap: 10, width: "100%" }}>
-            <Metric num="8" label="Jobs in progress" />
-            <Metric num={String(APPROVALS.length)} label="Awaiting my approval" bg="#F2ECFE" numColor="#6C2BD9" labelColor="#6C2BD9" onPress={() => router.push("/(manager)/approvals")} />
+            <Metric num={data ? String(data.jobsInProgress) : "—"} label="Jobs in progress" />
+            <Metric num={data ? String(data.awaitingApproval) : "—"} label="Awaiting my approval" bg="#F2ECFE" numColor="#6C2BD9" labelColor="#6C2BD9" onPress={() => router.push("/(manager)/approvals")} />
           </View>
           <View className="flex-row" style={{ gap: 10, width: "100%" }}>
-            <Metric num="4" label="Due for delivery" />
-            <Metric num={inr(outstandingTotal())} label="Outstanding" onPress={() => router.push("/(manager)/finances")} />
+            <Metric num={data ? String(data.dueForDelivery) : "—"} label="Due for delivery" />
+            <Metric num={data?.outstanding === undefined ? "—" : inr(data.outstanding)} label="Outstanding" onPress={() => router.push("/(manager)/finances")} />
           </View>
         </View>
 

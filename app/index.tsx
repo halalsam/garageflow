@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,34 +7,51 @@ import { StatusBar } from "expo-status-bar";
 import { Txt } from "@/components/ui/Txt";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/Icon";
-import { useRole, ROLE_HOME } from "@/lib/role";
-import { WORKSHOP, type Role } from "@/data/mock";
-
-const ROLES: { key: Role; label: string }[] = [
-  { key: "tech", label: "Technician" },
-  { key: "manager", label: "Manager" },
-  { key: "admin", label: "Admin" },
-];
-
-function Field({ icon, value }: { icon: "envelope-simple" | "lock-simple"; value: string }) {
+import { useAuth, ROLE_HOME } from "@/lib/auth";
+import { ApiRequestError } from "@/lib/api/client";
+import { WORKSHOP } from "@/lib/format";
+function Field({
+  icon,
+  ...props
+}: { icon: "envelope-simple" | "lock-simple" } & React.ComponentProps<typeof TextInput>) {
   return (
     <View
       className="w-full flex-row items-center rounded-[14px] bg-white px-[16px] py-[16px]"
       style={{ gap: 11, shadowColor: "#281E14", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}
     >
       <Icon name={icon} size={19} color="#9CA3AF" />
-      <Txt className="font-medium text-[14px] text-faint">{value}</Txt>
+      <TextInput
+        className="flex-1 font-medium text-[14px] text-ink"
+        placeholderTextColor="#9CA3AF"
+        {...props}
+      />
     </View>
   );
 }
 
 export default function Login() {
-  const { role, setRole } = useRole();
-  const [sel, setSel] = useState<Role>(role);
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const signIn = () => {
-    setRole(sel);
-    router.replace(ROLE_HOME[sel] as any);
+  const signIn = async () => {
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const user = await login(email.trim(), password);
+      router.replace(ROLE_HOME[user.role] as any);
+    } catch (e) {
+      const msg =
+        e instanceof ApiRequestError && e.statusCode === 401
+          ? "Incorrect email or password"
+          : "Couldn't sign in. Check your connection and try again.";
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -56,33 +73,46 @@ export default function Login() {
               Workshop management, simplified
             </Txt>
 
-            <Field icon="envelope-simple" value="Phone or email" />
-            <Field icon="lock-simple" value="••••••••" />
+            <Field
+              icon="envelope-simple"
+              placeholder="Phone or email"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              textContentType="username"
+              value={email}
+              onChangeText={setEmail}
+              returnKeyType="next"
+            />
+            <Field
+              icon="lock-simple"
+              placeholder="Password"
+              secureTextEntry
+              autoCapitalize="none"
+              textContentType="password"
+              value={password}
+              onChangeText={setPassword}
+              returnKeyType="go"
+              onSubmitEditing={signIn}
+            />
 
-            {/* Role picker — choose which workspace to sign into */}
-            <View className="mt-[2px] w-full">
-              <Txt className="mb-[8px] font-bold text-[11px] text-faint" style={{ letterSpacing: 0.4 }}>
-                SIGN IN AS
-              </Txt>
-              <View className="flex-row" style={{ gap: 8 }}>
-                {ROLES.map((r) => {
-                  const on = r.key === sel;
-                  return (
-                    <Pressable
-                      key={r.key}
-                      onPress={() => setSel(r.key)}
-                      className={`flex-1 items-center rounded-[12px] border-[1.5px] py-[11px] ${
-                        on ? "border-orange bg-orange-soft" : "border-[#EAEAEE] bg-white"
-                      }`}
-                    >
-                      <Txt className={`font-bold text-[13px] ${on ? "text-orange" : "text-muted"}`}>{r.label}</Txt>
-                    </Pressable>
-                  );
-                })}
+            {error ? (
+              <View className="w-full flex-row items-center" style={{ gap: 6 }}>
+                <Icon name="x-circle" size={15} color="#DC2626" weight="fill" />
+                <Txt className="font-bold text-[12px]" style={{ color: "#DC2626" }}>
+                  {error}
+                </Txt>
               </View>
-            </View>
+            ) : null}
 
-            <Button label="Sign In" icon="arrow-right" iconWeight="bold" className="mt-[4px] w-full" onPress={signIn} />
+            <Button
+              label={busy ? "Signing in…" : "Sign In"}
+              icon={busy ? undefined : "arrow-right"}
+              iconWeight="bold"
+              className="mt-[4px] w-full"
+              onPress={signIn}
+              disabled={busy}
+            />
             <Txt className="mt-[2px] font-bold text-[13px] text-orange">Forgot password?</Txt>
           </View>
 

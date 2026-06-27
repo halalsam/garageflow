@@ -3,8 +3,8 @@ import { Card } from "@/components/ui/Card";
 import { Txt } from "@/components/ui/Txt";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/Icon";
-import { inr, type Party } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { Party } from "@/types/api";
 const initialsOf = (name: string) =>
   name
     .split(" ")

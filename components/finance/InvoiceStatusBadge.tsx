@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/Badge";
-import type { InvoiceStatus } from "@/data/mock";
+import type { InvoiceStatus } from "@/types/api";
 import type { Tone } from "@/lib/theme";
 
 const TONE_FOR: Record<InvoiceStatus, Tone> = {

@@ -5,16 +5,12 @@ import { Txt } from "@/components/ui/Txt";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { SectionLabel } from "@/components/ui/SectionLabel";
+import { useState } from "react";
 import { ExpenseRow } from "@/components/finance/ExpenseRow";
-import {
-  expensesInMonth,
-  expensesTotal,
-  profitInMonth,
-  revenueInMonth,
-  inr,
-  MONTH_LABEL,
-} from "@/data/mock";
-
+import { AddExpenseSheet } from "@/components/finance/AddExpenseSheet";
+import { Loading, ErrorState } from "@/components/ui/QueryState";
+import { useExpenses, useProfit } from "@/lib/api/hooks/queries";
+import { inr, MONTH_LABEL } from "@/lib/format";
 function ProfitLine({ label, value, color, strong }: { label: string; value: string; color?: string; strong?: boolean }) {
   return (
     <View className="flex-row items-center justify-between">
@@ -27,10 +23,30 @@ function ProfitLine({ label, value, color, strong }: { label: string; value: str
 }
 
 export function ExpensesScreen() {
-  const expenses = expensesInMonth();
-  const revenue = revenueInMonth();
-  const spent = expensesTotal();
-  const profit = profitInMonth();
+  const expensesQ = useExpenses();
+  const profitQ = useProfit();
+  const [sheet, setSheet] = useState(false);
+  const expenses = expensesQ.data ?? [];
+  const revenue = profitQ.data?.revenue ?? 0;
+  const spent = profitQ.data?.expenses ?? 0;
+  const profit = profitQ.data?.profit ?? 0;
+
+  if (expensesQ.isLoading || profitQ.isLoading) {
+    return (
+      <Screen>
+        <TopBar title="Expenses" back />
+        <Loading label="Loading expenses…" />
+      </Screen>
+    );
+  }
+  if (expensesQ.isError || profitQ.isError) {
+    return (
+      <Screen>
+        <TopBar title="Expenses" back />
+        <ErrorState onRetry={() => { expensesQ.refetch(); profitQ.refetch(); }} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -59,9 +75,10 @@ export function ExpensesScreen() {
         </View>
 
         <View className="mt-[16px]">
-          <Button label="Add expense" icon="plus" />
+          <Button label="Add expense" icon="plus" onPress={() => setSheet(true)} />
         </View>
       </ScrollView>
+      <AddExpenseSheet visible={sheet} onClose={() => setSheet(false)} />
     </Screen>
   );
 }

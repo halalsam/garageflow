@@ -6,8 +6,8 @@ import { Plate } from "@/components/ui/Plate";
 import { Avatar } from "@/components/ui/Avatar";
 import { CarThumb } from "@/components/ui/CarThumb";
 import { Icon } from "@/components/Icon";
-import { inr, type Approval } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { Approval } from "@/types/api";
 // One row in the Approvals list. Tapping it opens the approval detail.
 export function ApprovalRow({ approval, onPress }: { approval: Approval; onPress: () => void }) {
   return (

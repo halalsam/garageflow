@@ -10,8 +10,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Stepper } from "@/components/ui/Stepper";
 import { Icon, type IconName } from "@/components/Icon";
 import { cardShadow } from "@/lib/theme";
-import { inr } from "@/data/mock";
-
+import { inr } from "@/lib/format";
 function Field({ icon, value, dark }: { icon: IconName; value: string; dark?: boolean }) {
   return (
     <View className="flex-1 flex-row items-center rounded-[14px] bg-white px-[14px] py-[13px]" style={[cardShadow, { gap: 11 }]}>

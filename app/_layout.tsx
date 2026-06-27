@@ -4,7 +4,9 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { RoleProvider } from "@/lib/role";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/lib/auth";
+import { queryClient } from "@/lib/api/queryClient";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -18,25 +20,27 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <RoleProvider>
-          <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#F7F7F8" } }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(tech)" />
-            <Stack.Screen name="(manager)" />
-            <Stack.Screen name="(admin)" />
-            <Stack.Screen name="job/[id]" />
-            <Stack.Screen name="job/new" options={{ presentation: "modal" }} />
-            <Stack.Screen name="approval/[id]" />
-            <Stack.Screen name="invoice/[id]" />
-            <Stack.Screen name="finance/gst" />
-            <Stack.Screen name="finance/expenses" />
-            <Stack.Screen name="finance/ledgers" />
-            <Stack.Screen name="finance/ledger/[party]" />
-          </Stack>
-        </RoleProvider>
-      </SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#F7F7F8" } }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(tech)" />
+              <Stack.Screen name="(manager)" />
+              <Stack.Screen name="(admin)" />
+              <Stack.Screen name="job/[id]" />
+              <Stack.Screen name="job/new" options={{ presentation: "modal" }} />
+              <Stack.Screen name="approval/[id]" />
+              <Stack.Screen name="invoice/[id]" />
+              <Stack.Screen name="finance/gst" />
+              <Stack.Screen name="finance/expenses" />
+              <Stack.Screen name="finance/ledgers" />
+              <Stack.Screen name="finance/ledger/[party]" />
+            </Stack>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

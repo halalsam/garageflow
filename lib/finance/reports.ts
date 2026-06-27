@@ -1,8 +1,12 @@
 // Pure report builders — turn the finance data into accountant-facing CSV and
-// printable HTML. No native/React imports so this stays testable and portable
-// to the backend. The screens hand these strings to lib/finance/export.
+// printable HTML. No native/React/data imports so this stays testable and
+// portable. Callers fetch the data (via the API hooks) and hand it in; the
+// screens pass the returned strings to lib/finance/export.
 
-import { MONTH_LABEL, WORKSHOP, gstSummary, invoicesInMonth, partyLedger } from "@/data/mock";
+import type { GstReport, Invoice, LedgerStatement } from "@/types/api";
+
+const WORKSHOP = "Main Street Motors";
+const GSTIN = "27ABCDE1234F1Z5";
 
 const esc = (v: string | number) => {
   const s = String(v);
@@ -12,39 +16,36 @@ const row = (cells: (string | number)[]) => cells.map(esc).join(",");
 const half = (gst: number) => Math.round(gst / 2);
 
 // Customer statement (ledger) as CSV.
-export function partyLedgerCsv(customer: string): string {
-  const l = partyLedger(customer);
+export function partyLedgerCsv(ledger: LedgerStatement): string {
   const lines = [
-    row([`Statement of Account — ${customer}`]),
+    row([`Statement of Account — ${ledger.customer}`]),
     row([WORKSHOP]),
     "",
     row(["Date", "Particulars", "Invoice", "Debit", "Credit", "Balance"]),
-    ...l.entries.map((e) => row([e.date, e.particulars, e.ref, e.debit || "", e.credit || "", e.balance])),
+    ...ledger.entries.map((e) => row([e.date, e.particulars, e.ref, e.debit || "", e.credit || "", e.balance])),
     "",
-    row(["", "", "Closing balance", "", "", l.closing]),
+    row(["", "", "Closing balance", "", "", ledger.closing]),
   ];
   return lines.join("\n");
 }
 
-// GSTR-1 style outward-supplies / sales register.
-export function gstr1Csv(): string {
-  const invs = invoicesInMonth();
+// GSTR-1 style outward-supplies / sales register for the period's invoices.
+export function gstr1Csv(invoices: Invoice[], monthLabel: string): string {
   const lines = [
-    row([`GSTR-1 Outward Supplies — ${MONTH_LABEL}`]),
-    row([WORKSHOP, "GSTIN 27ABCDE1234F1Z5"]),
+    row([`GSTR-1 Outward Supplies — ${monthLabel}`]),
+    row([WORKSHOP, `GSTIN ${GSTIN}`]),
     "",
     row(["Invoice No", "Date", "Customer", "Taxable Value", "CGST", "SGST", "Invoice Value"]),
-    ...invs.map((i) => row([i.number, i.issuedAt, i.customer, i.subtotal, half(i.gst), i.gst - half(i.gst), i.total])),
+    ...invoices.map((i) => row([i.number, i.issuedAt, i.customer, i.subtotal, half(i.gst), i.gst - half(i.gst), i.total])),
   ];
   return lines.join("\n");
 }
 
-// GSTR-3B summary (net output tax for the period).
-export function gstr3bCsv(): string {
-  const g = gstSummary();
+// GSTR-3B summary (net output tax for the period) from the aggregate report.
+export function gstr3bCsv(g: GstReport, monthLabel: string): string {
   const lines = [
-    row([`GSTR-3B Summary — ${MONTH_LABEL}`]),
-    row([WORKSHOP, "GSTIN 27ABCDE1234F1Z5"]),
+    row([`GSTR-3B Summary — ${monthLabel}`]),
+    row([WORKSHOP, `GSTIN ${GSTIN}`]),
     "",
     row(["3.1(a) Outward taxable supplies", g.taxable]),
     row(["Central Tax (CGST)", g.cgst]),
@@ -56,10 +57,9 @@ export function gstr3bCsv(): string {
 }
 
 // Printable statement of account (for PDF export).
-export function partyLedgerHtml(customer: string): string {
-  const l = partyLedger(customer);
+export function partyLedgerHtml(ledger: LedgerStatement, monthLabel: string): string {
   const fmt = (n: number) => (n ? "₹" + n.toLocaleString("en-IN") : "");
-  const rows = l.entries
+  const rows = ledger.entries
     .map(
       (e) => `<tr>
         <td>${e.date}</td><td>${e.particulars}</td><td>${e.ref}</td>
@@ -78,10 +78,10 @@ export function partyLedgerHtml(customer: string): string {
       border-top:2px solid #1a1a1a;padding-top:10px}
   </style></head><body>
     <h1>Statement of Account</h1>
-    <div class="sub">${WORKSHOP} · ${customer} · ${MONTH_LABEL}</div>
+    <div class="sub">${WORKSHOP} · ${ledger.customer} · ${monthLabel}</div>
     <table><thead><tr><th>Date</th><th>Particulars</th><th>Invoice</th>
       <th class="num">Debit</th><th class="num">Credit</th><th class="num">Balance</th></tr></thead>
       <tbody>${rows}</tbody></table>
-    <div class="close"><span>Closing balance due</span><span>₹${l.closing.toLocaleString("en-IN")}</span></div>
+    <div class="close"><span>Closing balance due</span><span>₹${ledger.closing.toLocaleString("en-IN")}</span></div>
   </body></html>`;
 }
