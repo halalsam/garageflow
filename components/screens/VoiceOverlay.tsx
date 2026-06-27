@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal, Pressable, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Txt } from "@/components/ui/Txt";
 import { Waveform } from "@/components/chat/Chat";
@@ -22,6 +23,7 @@ export function VoiceOverlay({
   onSendVoice: (uri: string, seconds: number) => void;
   onCancel: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const rec = useVoiceRecorder();
   const [bars, setBars] = useState<number[]>(randomBars);
   const startedRef = useRef(false);
@@ -60,7 +62,14 @@ export function VoiceOverlay({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={cancel}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={cancel}
+    >
       <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(20,16,12,0.55)" }}>
         <View className="flex-1 items-center justify-center" style={{ paddingBottom: 40 }}>
           <View
@@ -82,7 +91,10 @@ export function VoiceOverlay({
         </View>
 
         <Pressable onPress={send}>
-          <View className="flex-row items-center bg-orange px-[13px] pb-[16px] pt-[11px]" style={{ gap: 9 }}>
+          <View
+            className="flex-row items-center bg-orange px-[13px] pt-[11px]"
+            style={{ gap: 9, paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 16 }}
+          >
             <View className="flex-1 flex-row items-center rounded-full px-[16px] py-[12px]" style={{ backgroundColor: "rgba(255,255,255,0.22)", gap: 7 }}>
               <Icon name="circle" size={10} color="#fff" weight="fill" />
               <Txt className="font-bold text-[13px] text-white">Recording… tap to send</Txt>

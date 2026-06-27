@@ -6,8 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ListRow } from "@/components/ui/ListRow";
 import { Icon } from "@/components/Icon";
-import { WORKSHOP } from "@/data/mock";
-
+import { WORKSHOP } from "@/lib/format";
 function SectionLabel({ children }: { children: string }) {
   return (
     <Txt className="mb-[8px] font-bold text-[11px] text-faint" style={{ letterSpacing: 0.4 }}>

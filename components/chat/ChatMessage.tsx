@@ -4,8 +4,8 @@ import { CarThumb } from "@/components/ui/CarThumb";
 import { Icon } from "@/components/Icon";
 import { Row, Bubble, BubbleTime, SystemPill } from "@/components/chat/Chat";
 import { VoiceMessage } from "@/components/chat/VoiceMessage";
-import { inr, type Person, type TimelineItem } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { Person, TimelineItem } from "@/types/api";
 // Renders a single timeline entry. `me` decides whether a message is rendered
 // as an outgoing ("own") bubble on the right.
 export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {

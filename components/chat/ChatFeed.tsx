@@ -1,8 +1,7 @@
 import { useRef } from "react";
 import { ScrollView } from "react-native";
 import { ChatMessage } from "@/components/chat/ChatMessage";
-import type { Person, TimelineItem } from "@/data/mock";
-
+import type { Person, TimelineItem } from "@/types/api";
 // Scrollable message feed that pins to the latest message as it grows.
 export function ChatFeed({ messages, me }: { messages: TimelineItem[]; me?: Person }) {
   const ref = useRef<ScrollView>(null);

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { RolePill } from "@/components/ui/RolePill";
 import { Icon } from "@/components/Icon";
-import { TEAM } from "@/data/mock";
+import { Loading, ErrorState } from "@/components/ui/QueryState";
+import { useTeam } from "@/lib/api/hooks/queries";
 
 const ROLE_STYLE: Record<string, { bg: string; color: string }> = {
   admin: { bg: "#F2ECFE", color: "#6C2BD9" },
@@ -16,11 +17,17 @@ const ROLE_STYLE: Record<string, { bg: string; color: string }> = {
 };
 
 export default function Team() {
+  const { data: team, isLoading, isError, refetch } = useTeam();
   return (
     <Screen>
       <TopBar title="Team" right={<Button label="Add" icon="plus" iconWeight="bold" small />} />
+      {isLoading ? (
+        <Loading label="Loading team…" />
+      ) : isError ? (
+        <ErrorState onRetry={() => refetch()} />
+      ) : (
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 24, gap: 10 }}>
-        {TEAM.map((m) => {
+        {(team ?? []).map((m) => {
           const rs = m.inactive ? { bg: "#F1F1F4", color: "#9CA3AF" } : ROLE_STYLE[m.role];
           return (
             <Card key={m.initials} className="flex-row items-center p-[13px]" style={{ gap: 12, opacity: m.inactive ? 0.6 : 1 }}>
@@ -41,6 +48,7 @@ export default function Team() {
           );
         })}
       </ScrollView>
+      )}
     </Screen>
   );
 }

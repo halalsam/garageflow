@@ -6,8 +6,7 @@ import { Plate } from "@/components/ui/Plate";
 import { CarThumb } from "@/components/ui/CarThumb";
 import { Icon } from "@/components/Icon";
 import { cardShadow, type Tone } from "@/lib/theme";
-import type { Job } from "@/data/mock";
-
+import type { Job } from "@/types/api";
 // Shared media header for the job-card family: the car thumbnail with the plate
 // pinned top-left and an optional status badge top-right. Both JobCard and
 // ActiveJobCard render through this so the header markup lives in one place.

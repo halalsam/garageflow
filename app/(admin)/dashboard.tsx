@@ -1,4 +1,5 @@
 import { ScrollView, View } from "react-native";
+import { router } from "expo-router";
 import { Screen } from "@/components/ui/Screen";
 import { Txt } from "@/components/ui/Txt";
 import { Avatar } from "@/components/ui/Avatar";
@@ -8,9 +9,11 @@ import { RolePill } from "@/components/ui/RolePill";
 import { ActiveJobCard } from "@/components/screens/ActiveJobCard";
 import { ActivityRow } from "@/components/screens/ActivityRow";
 import { Icon } from "@/components/Icon";
-import { WORKSHOP } from "@/data/mock";
-
+import { useDashboard } from "@/lib/api/hooks/queries";
+import { WORKSHOP, inr } from "@/lib/format";
 export default function AdminDashboard() {
+  const { data } = useDashboard();
+  const num = (n?: number) => (n === undefined ? "—" : inr(n));
   return (
     <Screen>
       <View className="flex-row items-center justify-between px-[18px] pb-[10px] pt-[6px]">
@@ -32,12 +35,12 @@ export default function AdminDashboard() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         <View className="px-[18px]" style={{ gap: 10 }}>
           <View className="flex-row" style={{ gap: 10 }}>
-            <Metric num="₹2.4L" label="Revenue this week" bg="#FFF6F2" numColor="#FF5A1F" />
-            <Metric num="₹1.2L" label="Outstanding" />
+            <Metric num={num(data?.revenueThisWeek)} label="Revenue this week" bg="#FFF6F2" numColor="#FF5A1F" onPress={() => router.push("/(admin)/finances")} />
+            <Metric num={num(data?.outstanding)} label="Outstanding" onPress={() => router.push("/(admin)/finances")} />
           </View>
           <View className="flex-row" style={{ gap: 10 }}>
-            <Metric num="8" label="Jobs in progress" />
-            <Metric num="3" label="Awaiting approval" />
+            <Metric num={data ? String(data.jobsInProgress) : "—"} label="Jobs in progress" />
+            <Metric num={data ? String(data.awaitingApproval) : "—"} label="Awaiting approval" />
           </View>
         </View>
 

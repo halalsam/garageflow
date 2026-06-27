@@ -8,8 +8,8 @@ import { fmtDuration } from "@/components/chat/useChat";
 export function RecordingBar({ millis, cancelArmed }: { millis: number; cancelArmed: boolean }) {
   return (
     <View className="flex-1 flex-row items-center rounded-full bg-[#F3F4F6] px-[16px] py-[11px]" style={{ gap: 8 }}>
-      <Icon name="circle" size={10} color="#EF4444" weight="fill" />
-      <Txt className="font-bold text-[13px] text-ink" style={{ fontVariant: ["tabular-nums"] }}>
+      <Icon name="circle" size={11} color="#EF4444" weight="fill" />
+      <Txt className="font-bold text-[16px] text-ink" style={{ fontVariant: ["tabular-nums"] }}>
         {fmtDuration(Math.floor(millis / 1000))}
       </Txt>
       <View className="flex-1 flex-row items-center justify-end" style={{ gap: 4 }}>

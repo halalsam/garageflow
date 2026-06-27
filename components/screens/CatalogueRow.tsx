@@ -2,8 +2,8 @@ import { View } from "react-native";
 import { Txt } from "@/components/ui/Txt";
 import { Card } from "@/components/ui/Card";
 import { Icon } from "@/components/Icon";
-import { inr, type CatalogueItem } from "@/data/mock";
-
+import { inr } from "@/lib/format";
+import type { CatalogueItem } from "@/types/api";
 // A catalogue list row for a part or service.
 export function CatalogueRow({ item }: { item: CatalogueItem }) {
   return (
