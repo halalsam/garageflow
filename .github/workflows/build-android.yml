@@ -1,13 +1,12 @@
 name: Build Android APK
 
-# Builds an installable APK via EAS cloud, then attaches it to the workflow run
-# as a downloadable artifact (Actions → this run → "garageflow-apk").
+# Builds an installable APK entirely on the GitHub runner (no EAS cloud, no
+# queue) and attaches it to the run as a downloadable artifact:
+#   Actions → this run → "garageflow-apk".
 #
-# Setup (one time):
-#   1. Create a free Expo account at https://expo.dev
-#   2. Make an access token: https://expo.dev/accounts/[you]/settings/access-tokens
-#   3. Add it to this repo: Settings → Secrets and variables → Actions →
-#      New repository secret → name EXPO_TOKEN, value = the token
+# It runs `expo prebuild` to generate the native android/ project, then a plain
+# Gradle debug build. The debug APK is self-signed and directly installable on a
+# device (enable "install unknown apps") — no secrets or keystore needed.
 #
 # Run it: Actions tab → "Build Android APK" → "Run workflow".
 
@@ -31,33 +30,34 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build APK (EAS cloud)
-        # --wait blocks until the cloud build finishes; the JSON gives us the
-        # artifact URL to download.
-        run: |
-          eas build \
-            --platform android \
-            --profile preview \
-            --non-interactive \
-            --wait \
-            --json > build-result.json
-          cat build-result.json
+      - name: Prebuild native Android project
+        run: npx expo prebuild --platform android --no-install
 
-      - name: Download the built APK
+      - name: Build debug APK
         run: |
-          URL=$(node -e "const b=require('./build-result.json'); const x=Array.isArray(b)?b[0]:b; console.log(x.artifacts?.applicationArchiveUrl || x.artifacts?.buildUrl || '')")
-          echo "Artifact URL: $URL"
-          if [ -z "$URL" ]; then echo "No artifact URL found"; exit 1; fi
-          curl -L "$URL" -o garageflow.apk
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Locate APK
+        id: apk
+        run: |
+          APK=$(find android/app/build/outputs/apk -name "*.apk" | head -n1)
+          echo "Found APK: $APK"
+          if [ -z "$APK" ]; then echo "No APK produced"; exit 1; fi
+          cp "$APK" garageflow.apk
           ls -la garageflow.apk
 
       - name: Upload APK artifact
