@@ -13,12 +13,19 @@ export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
     return <SystemPill text={it.text} tone={it.tone} icon={it.icon} />;
   }
 
-  const own = !!me && it.by.initials === me.initials;
+  // Right-align only messages authored by the current user. Prefer the stable
+  // user id; fall back to name + initials for older entries that lack one.
+  const own =
+    !!me &&
+    (it.by.id && me.id
+      ? it.by.id === me.id
+      : it.by.initials === me.initials && it.by.name === me.name);
+  const senderName = own ? undefined : it.by.name;
 
   switch (it.kind) {
     case "text":
       return (
-        <Row initials={it.by.initials} color={it.by.color} own={own}>
+        <Row initials={it.by.initials} color={it.by.color} name={senderName} own={own}>
           <Bubble own={own}>
             <Txt className={`text-[13px] ${own ? "text-white" : ""}`} style={{ lineHeight: 19 }}>
               {it.text}
@@ -29,7 +36,7 @@ export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
       );
     case "photo":
       return (
-        <Row initials={it.by.initials} color={it.by.color} own={own}>
+        <Row initials={it.by.initials} color={it.by.color} name={senderName} own={own}>
           <Bubble className="p-[6px]" own={own}>
             {it.uri ? (
               <Image source={{ uri: it.uri }} style={{ width: 180, height: 135, borderRadius: 10 }} resizeMode="cover" />
@@ -52,7 +59,7 @@ export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
       );
     case "voice":
       return (
-        <Row initials={it.by.initials} color={it.by.color} own={own}>
+        <Row initials={it.by.initials} color={it.by.color} name={senderName} own={own}>
           <Bubble style={{ minWidth: 160 }}>
             <VoiceMessage uri={it.uri} dur={it.dur} />
             <BubbleTime>{it.time}</BubbleTime>
@@ -61,7 +68,7 @@ export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
       );
     case "part":
       return (
-        <Row initials={it.by.initials} color={it.by.color} own={own}>
+        <Row initials={it.by.initials} color={it.by.color} name={senderName} own={own}>
           <Bubble className="border border-[#FFE0D2] bg-[#FFF6F2]" style={{ width: 230 }}>
             <View className="flex-row items-center" style={{ gap: 8 }}>
               <View className="h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-orange">

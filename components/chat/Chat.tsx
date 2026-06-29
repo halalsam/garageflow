@@ -38,11 +38,13 @@ export function SystemPill({
 export function Row({
   initials,
   color,
+  name,
   own = false,
   children,
 }: {
   initials: string;
   color: string;
+  name?: string;
   own?: boolean;
   children: React.ReactNode;
 }) {
@@ -56,7 +58,12 @@ export function Row({
   return (
     <View className="flex-row items-end" style={{ gap: 8 }}>
       <Avatar initials={initials} color={color} size={28} />
-      <View style={{ maxWidth: "80%", alignItems: "flex-start" }}>{children}</View>
+      <View style={{ maxWidth: "80%", alignItems: "flex-start" }}>
+        {name ? (
+          <Txt className="mb-[2px] ml-[2px] font-bold text-[10.5px] text-muted">{name}</Txt>
+        ) : null}
+        {children}
+      </View>
     </View>
   );
 }

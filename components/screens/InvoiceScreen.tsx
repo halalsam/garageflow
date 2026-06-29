@@ -5,12 +5,19 @@ import { InvoiceReceipt } from "@/components/finance/InvoiceReceipt";
 import { PaymentPanel } from "@/components/finance/PaymentPanel";
 import { Loading, ErrorState } from "@/components/ui/QueryState";
 import { useInvoice } from "@/lib/api/hooks/queries";
+import { sharePdf } from "@/lib/finance/export";
+import { invoiceHtml } from "@/lib/finance/invoiceHtml";
 
 export function InvoiceScreen({ id }: { id?: string }) {
   const { data: invoice, isLoading, isError, refetch } = useInvoice(id ?? "");
+
+  const onExport = invoice
+    ? () => sharePdf(invoice.number, invoiceHtml(invoice))
+    : undefined;
+
   return (
     <Screen>
-      <TopBar title="Invoice" back right={<HeaderIcon name="export" />} />
+      <TopBar title="Invoice" back right={<HeaderIcon name="export" onPress={onExport} />} />
       {isLoading ? (
         <Loading label="Loading invoice…" />
       ) : isError || !invoice ? (

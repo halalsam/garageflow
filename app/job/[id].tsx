@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Pressable, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Pressable, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,7 +28,7 @@ export default function JobTimeline() {
 
   // Who the current user is on this screen, used to right-align their messages.
   const me: Person = user
-    ? { name: user.name, initials: user.initials, color: user.color }
+    ? { id: user.id, name: user.name, initials: user.initials, color: user.color }
     : { name: "Me", initials: "?", color: "a" };
   const { messages, sendText, sendVoice, sendPhoto } = useJobChat(id, job?.timeline ?? [], me);
   const updateJob = useUpdateJob(id);
@@ -51,11 +51,30 @@ export default function JobTimeline() {
     );
   }
 
-  const pickPhoto = async () => {
+  const takePhoto = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Camera access needed", "Enable camera permission to take photos.");
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]) sendPhoto(res.assets[0].uri);
+  };
+
+  const chooseFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
     if (!res.canceled && res.assets?.[0]) sendPhoto(res.assets[0].uri);
+  };
+
+  // Let the user pick a source before attaching a photo.
+  const pickPhoto = () => {
+    Alert.alert("Add photo", undefined, [
+      { text: "Take Photo", onPress: takePhoto },
+      { text: "Choose from Library", onPress: chooseFromLibrary },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   return (

@@ -12,7 +12,9 @@ import type { IconName } from "@/components/Icon";
 
 export type Role = "tech" | "manager" | "admin";
 
-export type Person = { name: string; initials: string; color: string };
+// `id` is the user's stable id; present on entries authored by a real user
+// (e.g. timeline messages) so clients can reliably detect "own" items.
+export type Person = { id?: string; name: string; initials: string; color: string };
 
 export type Job = {
   id: string;
