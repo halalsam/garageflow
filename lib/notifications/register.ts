@@ -51,7 +51,10 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
   }
 
   // Push tokens only exist on physical devices.
-  if (!Device.isDevice) return null;
+  if (!Device.isDevice) {
+    console.warn("[push] skipped: not a physical device");
+    return null;
+  }
 
   const { status: existing } = await Notifications.getPermissionsAsync();
   let final = existing;
@@ -59,17 +62,25 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     const { status } = await Notifications.requestPermissionsAsync();
     final = status;
   }
-  if (final !== "granted") return null;
+  if (final !== "granted") {
+    console.warn(`[push] permission not granted (status="${final}")`);
+    return null;
+  }
 
   const extra = Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined;
   const projectId = extra?.eas?.projectId ?? (Constants as any)?.easConfig?.projectId;
-  if (!projectId) return null;
+  if (!projectId) {
+    console.warn("[push] no EAS projectId in expoConfig.extra");
+    return null;
+  }
 
   try {
     const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    console.log(`[push] got Expo token: ${token}`);
     storedToken = token;
     return token;
-  } catch {
+  } catch (err) {
+    console.warn(`[push] getExpoPushTokenAsync failed: ${String(err)}`);
     return null;
   }
 }
