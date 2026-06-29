@@ -64,6 +64,29 @@ export function usePostTimeline(jobId: string) {
   });
 }
 
+// Mark a job's chat as read by the current user. Refreshes the job detail so
+// the per-user read receipts update for everyone on next fetch.
+export function useMarkJobRead(jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => e.markJobRead(jobId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.job(jobId) }),
+  });
+}
+
+// Upload a mandatory completion photo for a side. The endpoint returns the
+// updated job detail, so we seed the cache with it immediately.
+export function useUploadCompletionPhoto(jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (form: FormData) => e.uploadCompletionPhoto(jobId, form),
+    onSuccess: (job) => {
+      qc.setQueryData(qk.job(jobId), job);
+      qc.invalidateQueries({ queryKey: qk.job(jobId) });
+    },
+  });
+}
+
 // Add catalogue parts to a job (decrements stock, appends PART timeline entries).
 export function useAddParts(jobId: string) {
   const qc = useQueryClient();

@@ -48,6 +48,9 @@ export const addParts = (id: string, items: { catalogueItemId: string; qty: numb
 export const submitEstimate = (id: string, lines: { label: string; note: string; amount: number }[], gstRate?: number) =>
   api.post<Approval>(`/jobs/${id}/estimate`, { lines, gstRate });
 export const postTimeline = (id: string, form: FormData) => api.postForm<TimelineItem>(`/jobs/${id}/timeline`, form);
+export const markJobRead = (id: string) => api.post<{ message: string }>(`/jobs/${id}/read`, {});
+export const uploadCompletionPhoto = (id: string, form: FormData) =>
+  api.postForm<JobDetail>(`/jobs/${id}/completion-photos`, form);
 
 // ── Catalogue ──
 export const fetchCatalogue = (kind?: "part" | "service", signal?: AbortSignal) =>

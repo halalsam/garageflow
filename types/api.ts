@@ -35,14 +35,27 @@ export type Job = {
 };
 
 // Job detail adds the timeline inline (GET /jobs/:id).
-export type JobDetail = Job & { timeline: TimelineItem[] };
+// A per-user read marker: who has read the chat and up to when (ISO).
+export type JobRead = { by: Person; atISO: string };
 
+// One of the four mandatory walk-around photos captured at job completion.
+export type CompletionSide = "front" | "back" | "left" | "right";
+export type CompletionPhoto = { side: CompletionSide; uri: string };
+export const COMPLETION_SIDES: CompletionSide[] = ["front", "back", "left", "right"];
+
+export type JobDetail = Job & {
+  timeline: TimelineItem[];
+  reads?: JobRead[];
+  completionPhotos?: CompletionPhoto[];
+};
+
+// `atISO` is the message's server timestamp, used to compute read receipts.
 export type TimelineItem =
   | { kind: "system"; text: string; tone: "purple" | "green"; icon?: "shield-check" | "check-circle" }
-  | { kind: "text"; by: Person; text: string; time: string }
-  | { kind: "photo"; by: Person; tag?: string; time: string; uri?: string }
-  | { kind: "voice"; by: Person; dur: string; time: string; uri?: string }
-  | { kind: "part"; by: Person; name: string; qty: number; price: number; time: string };
+  | { kind: "text"; by: Person; text: string; time: string; atISO?: string }
+  | { kind: "photo"; by: Person; tag?: string; time: string; uri?: string; atISO?: string }
+  | { kind: "voice"; by: Person; dur: string; time: string; uri?: string; atISO?: string }
+  | { kind: "part"; by: Person; name: string; qty: number; price: number; time: string; atISO?: string };
 
 export type CatalogueItem = {
   id: string;

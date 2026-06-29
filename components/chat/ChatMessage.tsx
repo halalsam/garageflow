@@ -4,11 +4,13 @@ import { CarThumb } from "@/components/ui/CarThumb";
 import { Icon } from "@/components/Icon";
 import { Row, Bubble, BubbleTime, SystemPill } from "@/components/chat/Chat";
 import { VoiceMessage } from "@/components/chat/VoiceMessage";
+import { ReadReceipt } from "@/components/chat/ReadReceipt";
 import { inr } from "@/lib/format";
 import type { Person, TimelineItem } from "@/types/api";
 // Renders a single timeline entry. `me` decides whether a message is rendered
-// as an outgoing ("own") bubble on the right.
-export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
+// as an outgoing ("own") bubble on the right. `seenBy` lists participants who
+// have read up to this (own) message — shown as small avatars beneath it.
+export function ChatMessage({ it, me, seenBy }: { it: TimelineItem; me?: Person; seenBy?: Person[] }) {
   if (it.kind === "system") {
     return <SystemPill text={it.text} tone={it.tone} icon={it.icon} />;
   }
@@ -21,7 +23,19 @@ export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
       ? it.by.id === me.id
       : it.by.initials === me.initials && it.by.name === me.name);
   const senderName = own ? undefined : it.by.name;
+  const receipt = own && seenBy?.length ? <ReadReceipt people={seenBy} /> : null;
 
+  const body = renderBody();
+  return receipt ? (
+    <View>
+      {body}
+      {receipt}
+    </View>
+  ) : (
+    body
+  );
+
+  function renderBody() {
   switch (it.kind) {
     case "text":
       return (
@@ -85,5 +99,6 @@ export function ChatMessage({ it, me }: { it: TimelineItem; me?: Person }) {
           </Bubble>
         </Row>
       );
+  }
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Pressable, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -12,13 +12,15 @@ import { Composer } from "@/components/chat/Composer";
 import { ChatFeed } from "@/components/chat/ChatFeed";
 import { AddPartSheet } from "@/components/screens/AddPartSheet";
 import { VoiceOverlay } from "@/components/screens/VoiceOverlay";
+import { CompletionPhotos } from "@/components/job/CompletionPhotos";
 import { Loading, ErrorState } from "@/components/ui/QueryState";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/lib/auth";
 import { useJob } from "@/lib/api/hooks/queries";
 import { useJobChat } from "@/lib/api/hooks/useJobChat";
-import { useUpdateJob } from "@/lib/api/hooks/mutations";
-import type { Person } from "@/types/api";
+import { useUpdateJob, useMarkJobRead, useUploadCompletionPhoto } from "@/lib/api/hooks/mutations";
+import { shareCompletionReport } from "@/lib/job/completionReport";
+import { COMPLETION_SIDES, type CompletionSide, type Person } from "@/types/api";
 
 export default function JobTimeline() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,6 +34,21 @@ export default function JobTimeline() {
     : { name: "Me", initials: "?", color: "a" };
   const { messages, sendText, sendVoice, sendPhoto } = useJobChat(id, job?.timeline ?? [], me);
   const updateJob = useUpdateJob(id);
+
+  // Mark the chat read once the latest message changes (covers open + new
+  // incoming messages while viewing). The ref guards against re-posting for the
+  // same tail message on every render.
+  const markRead = useMarkJobRead(id);
+  const lastSeenRef = useRef<string | null>(null);
+  const tail = messages.length ? JSON.stringify(messages[messages.length - 1]) : null;
+  useEffect(() => {
+    if (!user || !tail || lastSeenRef.current === tail) return;
+    lastSeenRef.current = tail;
+    markRead.mutate();
+  }, [tail, user]);
+
+  const uploadPhoto = useUploadCompletionPhoto(id);
+  const [busySide, setBusySide] = useState<CompletionSide | null>(null);
 
   const [sheet, setSheet] = useState(false);
   const [voice, setVoice] = useState(false);
@@ -77,6 +94,38 @@ export default function JobTimeline() {
     ]);
   };
 
+  // Capture one mandatory completion photo for a side (camera only).
+  const captureSide = async (side: CompletionSide) => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Camera access needed", "Enable camera permission to take completion photos.");
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
+    if (res.canceled || !res.assets?.[0]) return;
+    const uri = res.assets[0].uri;
+    const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+    const form = new FormData();
+    form.append("side", side);
+    form.append("image", { uri, name: `${side}.${ext}`, type: `image/${ext === "jpg" ? "jpeg" : ext}` } as any);
+    setBusySide(side);
+    uploadPhoto.mutate(form, { onSettled: () => setBusySide(null) });
+  };
+
+  const photos = job.completionPhotos ?? [];
+  const photosComplete = COMPLETION_SIDES.every((s) => photos.some((p) => p.side === s));
+  const isCompleted = job.status === "COMPLETED";
+
+  const completeJob = () => {
+    if (!photosComplete) {
+      Alert.alert("Photos required", "Capture all four completion photos before marking the job complete.");
+      return;
+    }
+    updateJob.mutate({ status: "COMPLETED", progress: 100 });
+  };
+
+  const sendReport = () => shareCompletionReport(job, photos);
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-[#F0EEF6]">
       <KeyboardAvoidingView className="flex-1" behavior="padding">
@@ -108,20 +157,31 @@ export default function JobTimeline() {
               <>
                 <Button label="Pause" icon="pause" small className="flex-1 bg-[#FEF6E7]" textClassName="text-[#D97706]" />
                 <Button
-                  label={job.status === "COMPLETED" ? "Completed" : updateJob.isPending ? "Saving…" : "Complete"}
+                  label={isCompleted ? "Completed" : updateJob.isPending ? "Saving…" : "Complete"}
                   variant="green"
                   icon="check"
                   small
                   className="flex-1"
-                  disabled={job.status === "COMPLETED" || updateJob.isPending}
-                  onPress={() => updateJob.mutate({ status: "COMPLETED", progress: 100 })}
+                  style={!photosComplete && !isCompleted ? { opacity: 0.5 } : undefined}
+                  disabled={isCompleted || updateJob.isPending}
+                  onPress={completeJob}
                 />
               </>
             )}
           </View>
+
+          {!isManager || photos.length ? (
+            <CompletionPhotos
+              photos={photos}
+              canCapture={!isManager && !isCompleted}
+              busySide={busySide}
+              onCapture={captureSide}
+              onSend={sendReport}
+            />
+          ) : null}
         </View>
 
-        <ChatFeed messages={messages} me={me} />
+        <ChatFeed messages={messages} me={me} reads={job.reads} />
 
         <Composer
           placeholder={isManager ? "Message the team…" : "Add a note…"}
