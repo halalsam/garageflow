@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Garage Flow",
-    "slug": "garageflow",
+    "slug": "garage-flow",
     "scheme": "garageflow",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,13 +18,23 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.sameerk21.garageflow"
+      "package": "com.sameerk21.garageflow",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiUrl": "http://192.168.0.106:3000/api"
+      "apiUrl": "https://garageflow-api-h6bs.onrender.com/api",
+      "router": {},
+      "eas": {
+        "projectId": "63698848-8139-4f76-9372-6ed1f2ae86d5"
+      }
     },
     "plugins": [
       "expo-router",
@@ -54,6 +64,7 @@
         }
       ],
       "expo-sharing"
-    ]
+    ],
+    "owner": "sammk21"
   }
 }
