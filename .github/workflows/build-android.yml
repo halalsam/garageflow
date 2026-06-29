@@ -67,7 +67,10 @@ jobs:
             echo "::error::ANDROID_KEYSTORE_BASE64 secret is missing. Add the signing secrets to the repo." >&2
             exit 1
           fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          # Absolute path: -Pandroid.injected.signing.store.file is resolved
+          # relative to the Gradle daemon CWD, not the module, so a relative
+          # path is looked up in the wrong place.
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
 
       - name: Build signed release APK
         env:
@@ -78,7 +81,7 @@ jobs:
           cd android
           chmod +x ./gradlew
           ./gradlew assembleRelease --no-daemon \
-            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore" \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
