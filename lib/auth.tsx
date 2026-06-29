@@ -3,6 +3,7 @@ import type { AuthUser, Role } from "@/types/api";
 import * as endpoints from "@/lib/api/endpoints";
 import { queryClient } from "@/lib/api/queryClient";
 import { clearTokens, loadTokens, setTokens } from "@/lib/api/tokens";
+import { getStoredPushToken } from "@/lib/notifications/register";
 
 type AuthState = {
   user: AuthUser | null;
@@ -47,6 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // De-register this device first (the route is authed) so a shared device
+    // stops receiving the previous user's pushes.
+    const pushToken = getStoredPushToken();
+    if (pushToken) {
+      try {
+        await endpoints.unregisterPushToken(pushToken);
+      } catch {
+        // best-effort
+      }
+    }
     try {
       await endpoints.logout();
     } catch {

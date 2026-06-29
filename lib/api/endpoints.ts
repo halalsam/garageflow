@@ -35,6 +35,12 @@ export const login = (email: string, password: string) =>
 export const fetchMe = () => api.get<AuthUser>("/auth/me");
 export const logout = () => api.post<void>("/auth/logout");
 
+// ── Push notifications ──
+export const registerPushToken = (token: string, platform?: "ios" | "android") =>
+  api.post<{ message: string }>("/notifications/register", { token, platform });
+export const unregisterPushToken = (token: string) =>
+  api.post<{ message: string }>("/notifications/unregister", { token });
+
 // ── Jobs ──
 export type JobsQuery = { status?: string; mine?: boolean };
 export const fetchJobs = (q?: JobsQuery, signal?: AbortSignal) =>

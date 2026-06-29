@@ -7,6 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/lib/auth";
 import { queryClient } from "@/lib/api/queryClient";
+import { PushNotificationsGate } from "@/components/notifications/PushNotificationsGate";
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -23,6 +24,7 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <AuthProvider>
+            <PushNotificationsGate />
             <StatusBar style="dark" />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#F7F7F8" } }}>
               <Stack.Screen name="index" />

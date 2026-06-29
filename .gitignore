@@ -18,6 +18,14 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Firebase Admin SDK / FCM V1 service-account keys (upload to EAS, never commit)
+*-firebase-adminsdk-*.json
+google-service-account*.json
+
+# EAS credentials sync output (keystore + secrets — EAS holds the source of truth)
+credentials.json
+credentials/
+
 # Metro
 .metro-health-check*
 

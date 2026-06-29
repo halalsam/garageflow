@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -61,6 +62,13 @@
         {
           "photosPermission": "Allow Garage Flow to attach photos to jobs.",
           "cameraPermission": "Allow Garage Flow to take job photos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FF5A1F",
+          "defaultChannel": "default"
         }
       ],
       "expo-sharing"
