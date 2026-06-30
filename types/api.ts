@@ -43,19 +43,57 @@ export type CompletionSide = "front" | "back" | "left" | "right";
 export type CompletionPhoto = { side: CompletionSide; uri: string };
 export const COMPLETION_SIDES: CompletionSide[] = ["front", "back", "left", "right"];
 
+// The timeline is no longer inlined on the job — it's the paginated JobEvent
+// feed (GET /jobs/:id/events). See `JobEvent` below.
 export type JobDetail = Job & {
-  timeline: TimelineItem[];
   reads?: JobRead[];
   completionPhotos?: CompletionPhoto[];
 };
 
-// `atISO` is the message's server timestamp, used to compute read receipts.
-export type TimelineItem =
-  | { kind: "system"; text: string; tone: "purple" | "green"; icon?: "shield-check" | "check-circle" }
-  | { kind: "text"; by: Person; text: string; time: string; atISO?: string }
-  | { kind: "photo"; by: Person; tag?: string; time: string; uri?: string; atISO?: string }
-  | { kind: "voice"; by: Person; dur: string; time: string; uri?: string; atISO?: string }
-  | { kind: "part"; by: Person; name: string; qty: number; price: number; time: string; atISO?: string };
+// ── Job-card events (the realtime timeline) ─────────────────────────────────
+// The polymorphic event feed served by GET /jobs/:id/events and broadcast over
+// the socket gateway. Discriminated on `type`; the backend serializer
+// (serializeEvent) mirrors these exactly. `clientId` is the sender's optimistic
+// id, echoed back so the client can reconcile its pending bubble. `status` is
+// client-only: it tracks an optimistic send before the server confirms it.
+export type JobEventStatus = "sending" | "sent" | "failed";
+
+type EventBase = {
+  id: string;
+  createdAt: string; // ISO
+  time: string; // pre-rendered "9:05 AM"
+  clientId?: string;
+  status?: JobEventStatus;
+};
+
+export type JobEvent =
+  | (EventBase & { type: "COMMENT"; by: Person; body: string })
+  | (EventBase & { type: "PHOTO"; by: Person; payload: { url: string; tag?: string } })
+  | (EventBase & { type: "VOICE"; by: Person; payload: { url: string; durationMs: number } })
+  | (EventBase & {
+      type: "PART_ADDED";
+      by: Person;
+      payload: { partName: string; qty: number; price: number };
+    })
+  | (EventBase & { type: "STATUS_CHANGE"; by?: Person; payload: { from: string; to: string } })
+  | (EventBase & {
+      type: "APPROVAL";
+      by?: Person;
+      body?: string;
+      payload?: { decision?: "approve" | "decline" };
+    })
+  | (EventBase & { type: "SYSTEM"; body: string; payload?: Record<string, unknown> });
+
+export type JobEventsPage = { items: JobEvent[]; nextCursor: string | null };
+
+// Returned by POST /jobs/:id/uploads/presign — the client PUTs the file to
+// `uploadUrl`, then posts an event whose payload.url is `fileUrl`.
+export type PresignedUpload = {
+  uploadUrl: string;
+  fileUrl: string;
+  method: "PUT";
+  headers: Record<string, string>;
+};
 
 export type CatalogueItem = {
   id: string;

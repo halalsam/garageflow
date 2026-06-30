@@ -9,7 +9,7 @@ import { Plate } from "@/components/ui/Plate";
 import { CarThumb } from "@/components/ui/CarThumb";
 import { Button } from "@/components/ui/Button";
 import { Composer } from "@/components/chat/Composer";
-import { ChatFeed } from "@/components/chat/ChatFeed";
+import { TimelineFeed } from "@/components/timeline/TimelineFeed";
 import { AddPartSheet } from "@/components/screens/AddPartSheet";
 import { VoiceOverlay } from "@/components/screens/VoiceOverlay";
 import { CompletionPhotos } from "@/components/job/CompletionPhotos";
@@ -17,7 +17,7 @@ import { Loading, ErrorState } from "@/components/ui/QueryState";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/lib/auth";
 import { useJob } from "@/lib/api/hooks/queries";
-import { useJobChat } from "@/lib/api/hooks/useJobChat";
+import { useJobEvents } from "@/lib/api/hooks/useJobEvents";
 import { useUpdateJob, useMarkJobRead, useUploadCompletionPhoto } from "@/lib/api/hooks/mutations";
 import { shareCompletionReport } from "@/lib/job/completionReport";
 import { COMPLETION_SIDES, type CompletionSide, type Person } from "@/types/api";
@@ -32,15 +32,15 @@ export default function JobTimeline() {
   const me: Person = user
     ? { id: user.id, name: user.name, initials: user.initials, color: user.color }
     : { name: "Me", initials: "?", color: "a" };
-  const { messages, sendText, sendVoice, sendPhoto } = useJobChat(id, job?.timeline ?? [], me);
+  const { events, sendText, sendVoice, sendPhoto, loadOlder, hasMore } = useJobEvents(id, me);
   const updateJob = useUpdateJob(id);
 
-  // Mark the chat read once the latest message changes (covers open + new
-  // incoming messages while viewing). The ref guards against re-posting for the
-  // same tail message on every render.
+  // Mark the chat read once the newest event changes (covers open + new incoming
+  // events while viewing). `events` is newest-first, so the tail is events[0].
+  // The ref guards against re-posting for the same event on every render.
   const markRead = useMarkJobRead(id);
   const lastSeenRef = useRef<string | null>(null);
-  const tail = messages.length ? JSON.stringify(messages[messages.length - 1]) : null;
+  const tail = events.length ? events[0].id : null;
   useEffect(() => {
     if (!user || !tail || lastSeenRef.current === tail) return;
     lastSeenRef.current = tail;
@@ -181,7 +181,13 @@ export default function JobTimeline() {
           ) : null}
         </View>
 
-        <ChatFeed messages={messages} me={me} reads={job.reads} />
+        <TimelineFeed
+          events={events}
+          me={me}
+          reads={job.reads}
+          onLoadOlder={loadOlder}
+          hasMore={hasMore}
+        />
 
         <Composer
           placeholder={isManager ? "Message the team…" : "Add a note…"}

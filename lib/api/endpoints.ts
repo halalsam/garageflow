@@ -17,14 +17,16 @@ import type {
   InvoiceStatus,
   Job,
   JobDetail,
+  JobEvent,
+  JobEventsPage,
   LedgerStatement,
+  PresignedUpload,
   Paginated,
   Party,
   PayMethod,
   Payment,
   ProfitReport,
   TeamMember,
-  TimelineItem,
   VehicleHit,
 } from "@/types/api";
 import { api, request } from "./client";
@@ -50,11 +52,28 @@ export const createJob = (body: Record<string, unknown>) => api.post<Job>("/jobs
 export const updateJob = (id: string, body: Record<string, unknown>) =>
   api.patch<{ message: string }>(`/jobs/${id}`, body);
 export const addParts = (id: string, items: { catalogueItemId: string; qty: number }[]) =>
-  api.post<TimelineItem[]>(`/jobs/${id}/parts`, { items });
+  api.post<JobEvent[]>(`/jobs/${id}/parts`, { items });
 export const submitEstimate = (id: string, lines: { label: string; note: string; amount: number }[], gstRate?: number) =>
   api.post<Approval>(`/jobs/${id}/estimate`, { lines, gstRate });
-export const postTimeline = (id: string, form: FormData) => api.postForm<TimelineItem>(`/jobs/${id}/timeline`, form);
 export const markJobRead = (id: string) => api.post<{ message: string }>(`/jobs/${id}/read`, {});
+
+// ── Job-card events (realtime timeline) ──
+// Newest-first cursor page. `cursor` is the opaque token from the previous page.
+export const fetchJobEvents = (
+  id: string,
+  params: { cursor?: string; limit?: number },
+  signal?: AbortSignal,
+) => api.get<JobEventsPage>(`/jobs/${id}/events`, params, signal);
+
+// Post one event (JSON). `clientId` is echoed back for optimistic reconciliation.
+export const postJobEvent = (
+  id: string,
+  body: { type: JobEvent["type"]; body?: string; payload?: Record<string, unknown>; clientId?: string },
+) => api.post<JobEvent>(`/jobs/${id}/events`, body);
+
+// Get a presigned PUT target for a photo/voice file before posting its event.
+export const presignUpload = (id: string, contentType: string) =>
+  api.post<PresignedUpload>(`/jobs/${id}/uploads/presign`, { contentType });
 export const uploadCompletionPhoto = (id: string, form: FormData) =>
   api.postForm<JobDetail>(`/jobs/${id}/completion-photos`, form);
 

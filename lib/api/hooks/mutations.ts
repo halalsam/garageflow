@@ -51,19 +51,6 @@ export function useDecideApproval(id: string) {
   });
 }
 
-// Post a timeline entry (multipart for photo/voice). Invalidates the job detail
-// so the feed reflects the persisted entry; dashboard activity is derived too.
-export function usePostTimeline(jobId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (form: FormData) => e.postTimeline(jobId, form),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.job(jobId) });
-      qc.invalidateQueries({ queryKey: qk.dashboard });
-    },
-  });
-}
-
 // Mark a job's chat as read by the current user. Refreshes the job detail so
 // the per-user read receipts update for everyone on next fetch.
 export function useMarkJobRead(jobId: string) {

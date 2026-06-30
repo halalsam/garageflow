@@ -27,6 +27,7 @@ export const qk = {
   me: ["me"] as const,
   jobs: (params?: Record<string, unknown>) => ["jobs", params ?? {}] as const,
   job: (id: string) => ["job", id] as const,
+  jobEvents: (id: string) => ["jobEvents", id] as const,
   approvals: ["approvals"] as const,
   approval: (id: string) => ["approval", id] as const,
   invoices: (status?: string) => ["invoices", status ?? "all"] as const,
