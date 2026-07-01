@@ -9,29 +9,16 @@ import { useState } from "react";
 import { ExpenseRow } from "@/components/finance/ExpenseRow";
 import { AddExpenseSheet } from "@/components/finance/AddExpenseSheet";
 import { Loading, ErrorState } from "@/components/ui/QueryState";
-import { useExpenses, useProfit } from "@/lib/api/hooks/queries";
+import { useExpenses } from "@/lib/api/hooks/queries";
 import { inr, MONTH_LABEL } from "@/lib/format";
-function ProfitLine({ label, value, color, strong }: { label: string; value: string; color?: string; strong?: boolean }) {
-  return (
-    <View className="flex-row items-center justify-between">
-      <Txt className={strong ? "font-black text-[14px]" : "font-medium text-[13px] text-muted"}>{label}</Txt>
-      <Txt className={strong ? "font-black text-[16px]" : "font-bold text-[13px]"} style={{ color }}>
-        {value}
-      </Txt>
-    </View>
-  );
-}
 
 export function ExpensesScreen() {
   const expensesQ = useExpenses();
-  const profitQ = useProfit();
   const [sheet, setSheet] = useState(false);
   const expenses = expensesQ.data ?? [];
-  const revenue = profitQ.data?.revenue ?? 0;
-  const spent = profitQ.data?.expenses ?? 0;
-  const profit = profitQ.data?.profit ?? 0;
+  const spent = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  if (expensesQ.isLoading || profitQ.isLoading) {
+  if (expensesQ.isLoading) {
     return (
       <Screen>
         <TopBar title="Expenses" back />
@@ -39,11 +26,11 @@ export function ExpensesScreen() {
       </Screen>
     );
   }
-  if (expensesQ.isError || profitQ.isError) {
+  if (expensesQ.isError) {
     return (
       <Screen>
         <TopBar title="Expenses" back />
-        <ErrorState onRetry={() => { expensesQ.refetch(); profitQ.refetch(); }} />
+        <ErrorState onRetry={() => expensesQ.refetch()} />
       </Screen>
     );
   }
@@ -52,16 +39,13 @@ export function ExpensesScreen() {
     <Screen>
       <TopBar title="Expenses" back />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 28 }}>
-        {/* profit summary */}
-        <Card className="p-[15px]" style={{ gap: 9 }}>
+        <Card className="flex-row items-center justify-between p-[15px]">
           <Txt className="font-bold text-[11px] text-faint" style={{ letterSpacing: 0.4 }}>
-            {MONTH_LABEL.toUpperCase()} · NET PROFIT
+            {MONTH_LABEL.toUpperCase()} · TOTAL SPENT
           </Txt>
-          <ProfitLine label="Revenue (ex-GST)" value={inr(revenue)} color="#16A34A" />
-          <ProfitLine label="Expenses" value={`−${inr(spent)}`} color="#DC2626" />
-          <View className="mt-[3px] border-t border-line pt-[9px]">
-            <ProfitLine label="Net profit" value={inr(profit)} color={profit >= 0 ? "#16A34A" : "#DC2626"} strong />
-          </View>
+          <Txt className="font-black text-[18px]" style={{ color: "#DC2626" }}>
+            {inr(spent)}
+          </Txt>
         </Card>
 
         <View className="mt-[18px] flex-row items-center justify-between">

@@ -84,7 +84,7 @@ export function Bubble({
   return (
     <View
       className={`rounded-[15px] px-[12px] py-[9px] ${tone} ${className}`}
-      style={[{ shadowColor: "#281E14", shadowOpacity: 0.07, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }, style]}
+      style={[{ shadowColor: "#281E14", shadowOpacity: 0.07, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }, style]}
     >
       {children}
     </View>

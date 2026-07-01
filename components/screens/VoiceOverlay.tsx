@@ -74,7 +74,7 @@ export function VoiceOverlay({
         <View className="flex-1 items-center justify-center" style={{ paddingBottom: 40 }}>
           <View
             className="h-[96px] w-[96px] items-center justify-center rounded-full bg-orange"
-            style={{ shadowColor: "#FF5A1F", shadowOpacity: 0.25, shadowRadius: 28, shadowOffset: { width: 0, height: 0 } }}
+            style={{ shadowColor: "#FF5A1F", shadowOpacity: 0.25, shadowRadius: 28, shadowOffset: { width: 0, height: 0 }, elevation: 8 }}
           >
             <Icon name="microphone" size={42} color="#fff" weight="fill" />
           </View>

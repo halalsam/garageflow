@@ -3,17 +3,21 @@ import { router } from "expo-router";
 import { Screen } from "@/components/ui/Screen";
 import { Txt } from "@/components/ui/Txt";
 import { Avatar } from "@/components/ui/Avatar";
-import { Card } from "@/components/ui/Card";
 import { Metric } from "@/components/ui/Metric";
 import { RolePill } from "@/components/ui/RolePill";
-import { ActiveJobCard } from "@/components/screens/ActiveJobCard";
-import { ActivityRow } from "@/components/screens/ActivityRow";
+import { ActiveJobsStrip } from "@/components/screens/ActiveJobsStrip";
+import { TeamActivityCard } from "@/components/screens/TeamActivityCard";
 import { Icon } from "@/components/Icon";
-import { useDashboard } from "@/lib/api/hooks/queries";
+import { useDashboard, useJobs } from "@/lib/api/hooks/queries";
+import { useAuth } from "@/lib/auth";
 import { WORKSHOP, inr } from "@/lib/format";
+
 export default function AdminDashboard() {
+  const { user } = useAuth();
   const { data } = useDashboard();
+  const { data: jobs } = useJobs();
   const num = (n?: number) => (n === undefined ? "—" : inr(n));
+
   return (
     <Screen>
       <View className="flex-row items-center justify-between px-[18px] pb-[10px] pt-[6px]">
@@ -28,7 +32,7 @@ export default function AdminDashboard() {
         </View>
         <View className="flex-row items-center" style={{ gap: 8 }}>
           <RolePill icon="crown-simple" label="Owner" bg="#F2ECFE" color="#6C2BD9" small />
-          <Avatar initials="VK" color="f" />
+          <Avatar initials={user?.initials ?? "?"} color={user?.color ?? "f"} />
         </View>
       </View>
 
@@ -44,23 +48,12 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        <View className="mt-[15px] flex-row items-center justify-between px-[18px]">
-          <Txt className="font-bold text-[18px]" style={{ letterSpacing: -0.3 }}>
-            Active jobs
-          </Txt>
-          <Txt className="font-bold text-[13px] text-orange">See all</Txt>
+        <View className="mt-[15px]">
+          <ActiveJobsStrip jobs={jobs ?? []} />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-[10px]" contentContainerStyle={{ paddingHorizontal: 18, gap: 12 }}>
-          <ActiveJobCard id="j1" plate="MH 02 AB 1234" title="Maruti Swift" techInitials="AP" techColor="a" techName="Arjun" progress={65} />
-          <ActiveJobCard id="j2" plate="GJ 01 KK 0921" title="Hyundai Creta" techInitials="SV" techColor="d" techName="Suresh" progress={40} barColor="#F59E0B" />
-        </ScrollView>
 
         <View className="mt-[15px] px-[18px]">
-          <Txt className="mb-[10px] font-bold text-[15px]">Team activity</Txt>
-          <Card className="px-[14px] py-[6px]">
-            <ActivityRow first initials="AP" color="a" name="Arjun" task="Swift, brakes" label="ACTIVE" tone="blue" />
-            <ActivityRow initials="SV" color="d" name="Suresh" task="Creta, AC" label="PART" tone="amber" />
-          </Card>
+          <TeamActivityCard jobs={jobs ?? []} />
         </View>
       </ScrollView>
     </Screen>

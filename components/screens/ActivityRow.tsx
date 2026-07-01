@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { Txt } from "@/components/ui/Txt";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import type { Tone } from "@/lib/theme";
 
 // A single "Team activity" row: who is doing what, with a status badge.
 export function ActivityRow({
@@ -18,7 +19,7 @@ export function ActivityRow({
   name: string;
   task: string;
   label: string;
-  tone: "blue" | "amber";
+  tone: Tone;
   first?: boolean;
 }) {
   return (

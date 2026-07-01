@@ -1,7 +1,7 @@
 import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { Screen } from "@/components/ui/Screen";
-import { TopBar, HeaderIcon } from "@/components/ui/TopBar";
+import { TopBar } from "@/components/ui/TopBar";
 import { Txt } from "@/components/ui/Txt";
 import { Metric } from "@/components/ui/Metric";
 import { SectionLabel } from "@/components/ui/SectionLabel";
@@ -17,8 +17,6 @@ import {
   useFinanceSummary,
   useGstReport,
   useInvoices,
-  useLedgers,
-  useProfit,
   useReceivables,
 } from "@/lib/api/hooks/queries";
 import { inr } from "@/lib/format";
@@ -28,9 +26,7 @@ export function FinanceScreen() {
   const summary = useFinanceSummary();
   const collectionsQ = useCollections();
   const receivablesQ = useReceivables();
-  const ledgersQ = useLedgers();
   const gstQ = useGstReport();
-  const profitQ = useProfit();
   const invoicesQ = useInvoices();
   const { filter, setFilter, invoices } = useInvoiceFilter(invoicesQ.data ?? []);
   const openInvoice = (id: string) => router.push(`/invoice/${id}`);
@@ -40,7 +36,7 @@ export function FinanceScreen() {
   if (summary.isLoading || collectionsQ.isLoading) {
     return (
       <Screen>
-        <TopBar title="Finances" right={<HeaderIcon name="export" />} />
+        <TopBar title="Finances" />
         <Loading label="Loading finances…" />
       </Screen>
     );
@@ -48,7 +44,7 @@ export function FinanceScreen() {
   if (summary.isError) {
     return (
       <Screen>
-        <TopBar title="Finances" right={<HeaderIcon name="export" />} />
+        <TopBar title="Finances" />
         <ErrorState onRetry={() => summary.refetch()} />
       </Screen>
     );
@@ -60,7 +56,7 @@ export function FinanceScreen() {
 
   return (
     <Screen>
-      <TopBar title="Finances" right={<HeaderIcon name="export" />} />
+      <TopBar title="Finances" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 28 }}>
         {/* headline numbers */}
         <View className="flex-row px-[18px]" style={{ gap: 10 }}>
@@ -81,13 +77,6 @@ export function FinanceScreen() {
           <SectionLabel>REPORTS</SectionLabel>
           <View className="mt-[10px]" style={{ gap: 10 }}>
             <ReportLink
-              icon="users-three"
-              tint={{ bg: "#EAF2FF", fg: "#2563EB" }}
-              title="Customer ledgers"
-              subtitle={`${ledgersQ.data?.length ?? "…"} parties · statements & exports`}
-              onPress={() => router.push("/finance/ledgers")}
-            />
-            <ReportLink
               icon="percent"
               tint={{ bg: "#F2ECFE", fg: "#6C2BD9" }}
               title="GST report"
@@ -97,8 +86,8 @@ export function FinanceScreen() {
             <ReportLink
               icon="cart"
               tint={{ bg: "#FFF1EC", fg: "#FF5A1F" }}
-              title="Expenses & profit"
-              subtitle={`${dash(profitQ.data?.profit)} net profit this month`}
+              title="Expenses"
+              subtitle="Record parts, rent & salary spends"
               onPress={() => router.push("/finance/expenses")}
             />
           </View>

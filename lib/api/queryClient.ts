@@ -43,8 +43,5 @@ export const qk = {
     collections: (day?: string) => ["finance", "collections", day ?? "today"] as const,
     receivables: ["finance", "receivables"] as const,
     gst: (month?: string) => ["finance", "gst", month ?? "current"] as const,
-    profit: (month?: string) => ["finance", "profit", month ?? "current"] as const,
-    ledgers: ["finance", "ledgers"] as const,
-    ledger: (id: string) => ["finance", "ledger", id] as const,
   },
 };

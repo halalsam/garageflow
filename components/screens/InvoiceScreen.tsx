@@ -1,18 +1,43 @@
-import { ScrollView } from "react-native";
+import { useState } from "react";
+import { Alert, ScrollView } from "react-native";
 import { Screen } from "@/components/ui/Screen";
 import { TopBar, HeaderIcon } from "@/components/ui/TopBar";
 import { InvoiceReceipt } from "@/components/finance/InvoiceReceipt";
 import { PaymentPanel } from "@/components/finance/PaymentPanel";
+import { ShareInvoiceSheet } from "@/components/finance/ShareInvoiceSheet";
 import { Loading, ErrorState } from "@/components/ui/QueryState";
-import { useInvoice } from "@/lib/api/hooks/queries";
+import { useInvoice, useJob } from "@/lib/api/hooks/queries";
 import { sharePdf } from "@/lib/finance/export";
 import { invoiceHtml } from "@/lib/finance/invoiceHtml";
 
 export function InvoiceScreen({ id }: { id?: string }) {
   const { data: invoice, isLoading, isError, refetch } = useInvoice(id ?? "");
+  // The linked job carries the walk-around photos the share sheet can attach.
+  const { data: job } = useJob(invoice?.jobId ?? "");
+  const [sheet, setSheet] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
+  const before = job?.completionPhotos ?? [];
+  const after = job?.deliveryPhotos ?? [];
+
+  const share = async (includePhotos: boolean) => {
+    if (!invoice || sharing) return;
+    setSharing(true);
+    try {
+      const photos = includePhotos ? { before, after } : undefined;
+      await sharePdf(invoice.number, invoiceHtml(invoice, photos));
+      setSheet(false);
+    } catch {
+      Alert.alert("Couldn't share", "Something went wrong preparing the PDF. Try again.");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // With photos available the export button offers the attach toggle; without
+  // them it goes straight to the share sheet.
   const onExport = invoice
-    ? () => sharePdf(invoice.number, invoiceHtml(invoice))
+    ? () => (before.length + after.length > 0 ? setSheet(true) : share(false))
     : undefined;
 
   return (
@@ -28,6 +53,14 @@ export function InvoiceScreen({ id }: { id?: string }) {
           <PaymentPanel invoice={invoice} />
         </ScrollView>
       )}
+      <ShareInvoiceSheet
+        visible={sheet}
+        before={before}
+        after={after}
+        sharing={sharing}
+        onClose={() => setSheet(false)}
+        onShare={share}
+      />
     </Screen>
   );
 }

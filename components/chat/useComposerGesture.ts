@@ -2,9 +2,11 @@ import { useCallback, useRef, useState } from "react";
 import { Gesture } from "react-native-gesture-handler";
 import {
   cancelAnimation,
+  Easing,
   runOnJS,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { hArm, hCancel, hLock, hSend, hTick } from "@/components/chat/composerHaptics";
 import { useVoiceRecorder } from "@/components/chat/useVoiceRecorder";
@@ -24,6 +26,10 @@ const CANCEL_DX = -60; // drag-left distance that arms cancel
 const LOCK_DY = -40; // drag-up distance that snaps to hands-free lock
 const MIC_FOLLOW_MIN = -160; // furthest the floating mic trails the finger
 const LOCK_TRAVEL_MAX = -72; // furthest the lock chip lifts with the finger
+
+// WhatsApp's grow/shrink: a fast ease-out with no overshoot (their standard
+// cubic-bezier(0.2, 0, 0, 1) swap curve), unlike a bouncy spring.
+const GROW = { duration: 180, easing: Easing.bezier(0.2, 0, 0, 1) };
 
 export type ComposerGesture = ReturnType<typeof useComposerGesture>;
 
@@ -65,7 +71,7 @@ export function useComposerGesture({
     "worklet";
     translateX.value = withSpring(0, { damping: 18, stiffness: 220 });
     translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
-    micScale.value = withSpring(1, { damping: 14, stiffness: 200 });
+    micScale.value = withTiming(1, GROW);
     recording.value = false;
     cancelArmed.value = false;
     lockArmed.value = false;
@@ -122,7 +128,7 @@ export function useComposerGesture({
     .onStart(() => {
       "worklet";
       recording.value = true;
-      micScale.value = withSpring(1.6, { damping: 12, stiffness: 180 });
+      micScale.value = withTiming(2, GROW);
       runOnJS(beginRecording)();
     })
     .onFinalize(() => {
@@ -162,7 +168,7 @@ export function useComposerGesture({
         lockArmed.value = true;
         translateX.value = withSpring(0, { damping: 18, stiffness: 220 });
         translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
-        micScale.value = withSpring(1, { damping: 14, stiffness: 200 });
+        micScale.value = withTiming(1, GROW);
         runOnJS(hLock)(); // heavy confirmation pulse
         runOnJS(promoteToLocked)();
       }

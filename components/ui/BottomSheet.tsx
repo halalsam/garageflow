@@ -1,6 +1,7 @@
-import { Modal, Pressable, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Pressable, View } from "react-native";
 
 // Lightweight bottom sheet: dim backdrop + rounded panel. No reanimated dep.
+// Keyboard-aware: the panel lifts above the keyboard so inputs stay visible.
 export function BottomSheet({
   visible,
   onClose,
@@ -14,7 +15,11 @@ export function BottomSheet({
 }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(15,12,8,0.42)" }}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        className="flex-1 justify-end"
+        style={{ backgroundColor: "rgba(15,12,8,0.42)" }}
+      >
         <Pressable className="flex-1" onPress={onClose} />
         <View
           className="rounded-t-[26px] bg-white"
@@ -23,7 +28,7 @@ export function BottomSheet({
           <View className="my-[11px] h-[5px] w-[42px] self-center rounded-full bg-[#E2E2E8]" />
           {children}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

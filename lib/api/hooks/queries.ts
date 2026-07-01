@@ -114,21 +114,3 @@ export function useGstReport(month?: string) {
   });
 }
 
-export function useProfit(month?: string) {
-  return useQuery({
-    queryKey: qk.finance.profit(month),
-    queryFn: ({ signal }) => e.fetchProfit(month, signal),
-  });
-}
-
-export function useLedgers() {
-  return useQuery({ queryKey: qk.finance.ledgers, queryFn: ({ signal }) => e.fetchLedgers(signal) });
-}
-
-export function useLedger(customerId: string) {
-  return useQuery({
-    queryKey: qk.finance.ledger(customerId),
-    queryFn: ({ signal }) => e.fetchLedger(customerId, signal),
-    enabled: !!customerId,
-  });
-}

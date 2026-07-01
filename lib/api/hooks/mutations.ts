@@ -22,7 +22,7 @@ export function useRecordPayment(invoiceId: string) {
   });
 }
 
-// Add a business expense. Affects profit + expense list.
+// Add a business expense.
 export function useAddExpense() {
   const qc = useQueryClient();
   return useMutation({
@@ -30,7 +30,6 @@ export function useAddExpense() {
       e.addExpense(body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses"] });
-      qc.invalidateQueries({ queryKey: qk.finance.profit() });
     },
   });
 }

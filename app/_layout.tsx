@@ -37,8 +37,6 @@ export default function RootLayout() {
               <Stack.Screen name="invoice/[id]" />
               <Stack.Screen name="finance/gst" />
               <Stack.Screen name="finance/expenses" />
-              <Stack.Screen name="finance/ledgers" />
-              <Stack.Screen name="finance/ledger/[party]" />
             </Stack>
           </AuthProvider>
         </SafeAreaProvider>

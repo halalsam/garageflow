@@ -34,6 +34,8 @@ export type Job = {
   complaint?: string;
   progress?: number;
   amount?: number;
+  // Present once an estimate is approved; routes to /invoice/[id].
+  invoiceId?: string;
 };
 
 // Job detail adds the timeline inline (GET /jobs/:id).
@@ -214,28 +216,6 @@ export type FinanceSummary = {
 export type Collections = { methods: MethodTotal[]; total: number; count: number };
 
 export type GstReport = { taxable: number; gst: number; cgst: number; sgst: number; count: number };
-
-export type ProfitReport = { revenue: number; expenses: number; profit: number };
-
-// A party in the ledgers list. `id` (customer UUID) routes to the statement.
-export type Party = { id: string; name: string; closing: number; invoices: number };
-
-export type LedgerEntry = {
-  at: string; // ISO, for ordering
-  date: string; // display label
-  particulars: string;
-  ref: string; // invoice number
-  debit: number; // invoice raised
-  credit: number; // payment received
-  balance: number; // running balance owed
-};
-
-export type LedgerStatement = {
-  customer: string;
-  billed: number;
-  closing: number;
-  entries: LedgerEntry[];
-};
 
 // ── Dashboard (role-aware) ──────────────────────────────────────────────────
 

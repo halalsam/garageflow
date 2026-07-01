@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Pressable, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,6 +26,7 @@ import {
   useUploadDeliveryPhoto,
 } from "@/lib/api/hooks/mutations";
 import { uploadJobFile } from "@/lib/api/upload";
+import { compressPhoto } from "@/lib/media/compress";
 import { shareCompletionReport } from "@/lib/job/completionReport";
 import { callCustomer, whatsappCustomer, shareCustomerReport } from "@/lib/share/contact";
 import { COMPLETION_SIDES, type CompletionSide, type Person } from "@/types/api";
@@ -87,14 +88,14 @@ export default function JobTimeline() {
       return;
     }
     const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (!res.canceled && res.assets?.[0]) sendPhoto(res.assets[0].uri);
+    if (!res.canceled && res.assets?.[0]) sendPhoto(await compressPhoto(res.assets[0]));
   };
 
   const chooseFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (!res.canceled && res.assets?.[0]) sendPhoto(res.assets[0].uri);
+    if (!res.canceled && res.assets?.[0]) sendPhoto(await compressPhoto(res.assets[0]));
   };
 
   // Let the user pick a source before attaching a photo.
@@ -115,11 +116,11 @@ export default function JobTimeline() {
     }
     const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
     if (res.canceled || !res.assets?.[0]) return null;
-    const uri = res.assets[0].uri;
-    const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+    // compressPhoto always re-encodes to JPEG, so the form part is fixed.
+    const uri = await compressPhoto(res.assets[0]);
     const form = new FormData();
     form.append("side", side);
-    form.append("image", { uri, name: `${side}.${ext}`, type: `image/${ext === "jpg" ? "jpeg" : ext}` } as any);
+    form.append("image", { uri, name: `${side}.jpg`, type: "image/jpeg" } as any);
     return form;
   };
 
@@ -128,7 +129,11 @@ export default function JobTimeline() {
     const form = await captureFormForSide(side);
     if (!form) return;
     setBusySide(side);
-    uploadPhoto.mutate(form, { onSettled: () => setBusySide(null) });
+    uploadPhoto.mutate(form, {
+      onSettled: () => setBusySide(null),
+      onError: (err: any) =>
+        Alert.alert("Photo not uploaded", err?.message ?? "Check your connection and try again."),
+    });
   };
 
   // Capture one mandatory delivery photo for a side.
@@ -136,7 +141,11 @@ export default function JobTimeline() {
     const form = await captureFormForSide(side);
     if (!form) return;
     setBusyDeliverySide(side);
-    uploadDelivery.mutate(form, { onSettled: () => setBusyDeliverySide(null) });
+    uploadDelivery.mutate(form, {
+      onSettled: () => setBusyDeliverySide(null),
+      onError: (err: any) =>
+        Alert.alert("Photo not uploaded", err?.message ?? "Check your connection and try again."),
+    });
   };
 
   const photos = job.completionPhotos ?? [];
@@ -147,7 +156,7 @@ export default function JobTimeline() {
 
   const completeJob = () => {
     if (!photosComplete) {
-      Alert.alert("Photos required", "Capture all four completion photos before marking the job complete.");
+      Alert.alert("Photos required", "Capture all four arrival photos before marking the job complete.");
       return;
     }
     updateJob.mutate({ status: "COMPLETED", progress: 100 });
@@ -181,18 +190,26 @@ export default function JobTimeline() {
     setDeliverySheet(true);
   };
 
+  // An invoice exists only after the estimate is approved. `invoiceId` routes
+  // directly; the backend also resolves the job code as a fallback.
+  const openInvoice = () => {
+    if (!job.invoiceId) {
+      Alert.alert("No invoice yet", "An invoice is created when the estimate is approved.");
+      return;
+    }
+    router.push(`/invoice/${job.invoiceId}`);
+  };
+
   const sendReport = () => shareCompletionReport(job, photos);
   const shareToCustomer = () =>
     shareCustomerReport(job, [...photos, ...deliveryPhotos], "Vehicle report");
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-[#F0EEF6]">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      {/* padding works on Android too now that edge-to-edge disables adjustResize */}
+      <KeyboardAvoidingView className="flex-1" behavior="padding">
         {/* header */}
-        <View className="bg-white px-[14px] pb-[12px] pt-[8px]" style={{ shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}>
+        <View className="bg-white px-[14px] pb-[12px] pt-[8px]" style={{ shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3, zIndex: 1 }}>
           <View className="flex-row items-center" style={{ gap: 10 }}>
             <Pressable onPress={() => router.back()} hitSlop={10}>
               <Icon name="caret-left" size={21} weight="bold" />
@@ -228,7 +245,14 @@ export default function JobTimeline() {
                   className="flex-1"
                   onPress={shareToCustomer}
                 />
-                <Button label="Invoice" variant="pur" icon="receipt" small className="flex-1" onPress={() => router.push(`/invoice/${job.id}`)} />
+                <Button
+                  label="Invoice"
+                  variant="pur"
+                  icon="receipt"
+                  small
+                  className="flex-1"
+                  onPress={openInvoice}
+                />
               </>
             ) : !isCompleted && !isDelivered ? (
               <Button
@@ -258,15 +282,14 @@ export default function JobTimeline() {
             />
           ) : null}
 
-          {!isManager || photos.length ? (
-            <CompletionPhotos
-              photos={photos}
-              canCapture={!isManager && !isCompleted && !isDelivered}
-              busySide={busySide}
-              onCapture={captureSide}
-              onSend={sendReport}
-            />
-          ) : null}
+          {/* Managers can act as technicians, so anyone on the job captures. */}
+          <CompletionPhotos
+            photos={photos}
+            canCapture={!isCompleted && !isDelivered}
+            busySide={busySide}
+            onCapture={captureSide}
+            onSend={sendReport}
+          />
         </View>
 
         <TimelineFeed

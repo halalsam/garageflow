@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextInput, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Pressable, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,7 +17,7 @@ function Field({
   return (
     <View
       className="w-full flex-row items-center rounded-[14px] bg-white px-[16px] py-[16px]"
-      style={{ gap: 11, shadowColor: "#281E14", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}
+      style={{ gap: 11, shadowColor: "#281E14", shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 }}
     >
       <Icon name={icon} size={19} color="#9CA3AF" />
       <TextInput
@@ -46,7 +46,7 @@ export default function Login() {
     } catch (e) {
       const msg =
         e instanceof ApiRequestError && e.statusCode === 401
-          ? "Incorrect email or password"
+          ? "Incorrect email/phone or password"
           : "Couldn't sign in. Check your connection and try again.";
       setError(msg);
     } finally {
@@ -59,10 +59,14 @@ export default function Login() {
       <StatusBar style="dark" />
       <LinearGradient colors={["#FFEAE0", "#F7ECF4", "#F7F7F8"]} locations={[0, 0.34, 0.62]} style={{ flex: 1 }}>
         <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
-          <View className="flex-1 items-center justify-center px-[32px]" style={{ gap: 13 }}>
+          <KeyboardAvoidingView
+            behavior="padding"
+            className="flex-1 items-center justify-center px-[32px]"
+            style={{ gap: 13 }}
+          >
             <View
               className="h-[78px] w-[78px] items-center justify-center rounded-[23px] bg-orange"
-              style={{ shadowColor: "#FF5A1F", shadowOpacity: 0.36, shadowRadius: 32, shadowOffset: { width: 0, height: 16 } }}
+              style={{ shadowColor: "#FF5A1F", shadowOpacity: 0.36, shadowRadius: 32, shadowOffset: { width: 0, height: 16 }, elevation: 10 }}
             >
               <Icon name="wrench" size={38} color="#fff" weight="fill" />
             </View>
@@ -113,8 +117,18 @@ export default function Login() {
               onPress={signIn}
               disabled={busy}
             />
-            <Txt className="mt-[2px] font-bold text-[13px] text-orange">Forgot password?</Txt>
-          </View>
+            <Pressable
+              hitSlop={8}
+              onPress={() =>
+                Alert.alert(
+                  "Forgot password?",
+                  "Ask your workshop manager or admin to reset it for you.",
+                )
+              }
+            >
+              <Txt className="mt-[2px] font-bold text-[13px] text-orange">Forgot password?</Txt>
+            </Pressable>
+          </KeyboardAvoidingView>
 
           <View className="flex-row items-center justify-center pb-[12px]" style={{ gap: 6 }}>
             <Icon name="storefront" size={14} color="#9CA3AF" weight="fill" />

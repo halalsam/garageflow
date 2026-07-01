@@ -133,7 +133,7 @@ export default function NewJobCard() {
       {/* submit */}
       <View
         className="border-t border-[#F0F0F2] bg-white px-[16px] pt-[14px]"
-        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom + 6 : 16, shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } }}
+        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom + 6 : 16, shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: -4 }, elevation: 8 }}
       >
         <Button
           label={create.isPending ? "Creating…" : job.lines.length > 0 ? "Create & send for review" : "Create job card"}

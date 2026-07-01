@@ -14,21 +14,26 @@ import { Icon } from "@/components/Icon";
 import { Loading, ErrorState, EmptyState } from "@/components/ui/QueryState";
 import { useJobs } from "@/lib/api/hooks/queries";
 
+// Which statuses each filter chip shows; "All" bypasses the lookup.
+const FILTER_STATUSES: Record<string, string[]> = {
+  "In Progress": ["IN PROGRESS", "AWAITING PART"],
+  Review: ["REVIEW"],
+  Done: ["COMPLETED", "DELIVERED"],
+};
+
 export default function ManagerJobs() {
   const [filter, setFilter] = useState("All");
   const { data: jobs, isLoading, isError, refetch } = useJobs();
   const count = jobs?.length ?? 0;
+  const shown = (jobs ?? []).filter(
+    (j) => filter.startsWith("All") || FILTER_STATUSES[filter]?.includes(j.status),
+  );
 
   return (
     <Screen>
       <TopBar
         title="All Jobs"
-        right={
-          <View className="flex-row items-center" style={{ gap: 14 }}>
-            <HeaderIcon name="sliders" />
-            <HeaderIcon name="plus" onPress={() => router.push("/job/new")} />
-          </View>
-        }
+        right={<HeaderIcon name="plus" onPress={() => router.push("/job/new")} />}
       />
       <View className="px-[18px]">
         <ChipRow
@@ -42,11 +47,11 @@ export default function ManagerJobs() {
         <Loading label="Loading jobs…" />
       ) : isError ? (
         <ErrorState onRetry={() => refetch()} />
-      ) : !jobs || jobs.length === 0 ? (
-        <EmptyState icon="wrench" text="No jobs yet" />
+      ) : shown.length === 0 ? (
+        <EmptyState icon="wrench" text={filter.startsWith("All") ? "No jobs yet" : `No ${filter.toLowerCase()} jobs`} />
       ) : (
         <ScrollView contentContainerStyle={{ paddingHorizontal: 18, paddingTop: 13, gap: 10, paddingBottom: 24 }}>
-          {jobs.map((j) => (
+          {shown.map((j) => (
             <Card key={j.id} className="flex-row items-center p-[11px]" style={{ gap: 12 }} onPress={() => router.push(`/job/${j.id}`)}>
               <CarThumb width={50} height={50} radius={12} iconSize={22} />
               <View className="flex-1">

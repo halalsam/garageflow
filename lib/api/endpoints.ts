@@ -19,13 +19,10 @@ import type {
   JobDetail,
   JobEvent,
   JobEventsPage,
-  LedgerStatement,
   PresignedUpload,
   Paginated,
-  Party,
   PayMethod,
   Payment,
-  ProfitReport,
   TeamMember,
   VehicleHit,
 } from "@/types/api";
@@ -122,7 +119,3 @@ export const fetchCollections = (day?: string, signal?: AbortSignal) =>
   api.get<Collections>("/finance/collections", { day }, signal);
 export const fetchReceivables = (signal?: AbortSignal) => api.get<Invoice[]>("/finance/receivables", undefined, signal);
 export const fetchGst = (month?: string, signal?: AbortSignal) => api.get<GstReport>("/finance/gst", { month }, signal);
-export const fetchProfit = (month?: string, signal?: AbortSignal) => api.get<ProfitReport>("/finance/profit", { month }, signal);
-export const fetchLedgers = (signal?: AbortSignal) => api.get<Party[]>("/finance/ledgers", undefined, signal);
-export const fetchLedger = (customerId: string, signal?: AbortSignal) =>
-  api.get<LedgerStatement>(`/finance/ledgers/${customerId}`, undefined, signal);

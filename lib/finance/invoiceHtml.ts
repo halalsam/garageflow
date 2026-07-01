@@ -1,9 +1,31 @@
 import { WORKSHOP, inr } from "@/lib/format";
-import type { Invoice } from "@/types/api";
+import type { CompletionPhoto, Invoice } from "@/types/api";
+
+const SIDE_LABEL: Record<string, string> = {
+  front: "Front",
+  back: "Back",
+  left: "Left",
+  right: "Right",
+};
+
+// Optional walk-around photos appended to the invoice: `before` is the set
+// captured when work finished, `after` the delivery hand-off set.
+export type InvoicePhotos = { before: CompletionPhoto[]; after: CompletionPhoto[] };
+
+function photoSection(title: string, photos: CompletionPhoto[]): string {
+  if (!photos.length) return "";
+  const cards = photos
+    .map(
+      (p) =>
+        `<div class="card"><img src="${p.uri}" /><div class="cap">${SIDE_LABEL[p.side] ?? p.side}</div></div>`,
+    )
+    .join("");
+  return `<h2>${title}</h2><div class="grid">${cards}</div>`;
+}
 
 // Build a printable HTML document for a single invoice. Rendered to PDF via
 // expo-print and handed to the share sheet (see sharePdf in ./export).
-export function invoiceHtml(invoice: Invoice): string {
+export function invoiceHtml(invoice: Invoice, photos?: InvoicePhotos): string {
   const lines = invoice.lines
     .map(
       (l) => `<tr><td>${escape(l.label)}</td><td class="r">${inr(l.amount)}</td></tr>`,
@@ -32,6 +54,11 @@ export function invoiceHtml(invoice: Invoice): string {
     .r { text-align: right; font-weight: 600; }
     .totals td { border: 0; padding: 3px 0; color: #71717A; }
     .grand td { border-top: 2px solid #18181B; padding-top: 12px; font-size: 18px; font-weight: 800; color: #18181B; }
+    h2 { font-size: 14px; margin: 26px 0 10px; }
+    .grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .card { width: calc(50% - 6px); }
+    .card img { width: 100%; border-radius: 10px; display: block; }
+    .cap { margin-top: 6px; font-size: 12px; font-weight: 700; color: #52525B; }
   </style></head>
   <body>
     <div class="head">
@@ -52,6 +79,8 @@ export function invoiceHtml(invoice: Invoice): string {
       ${paidRow}
       <tr class="grand"><td>Grand total</td><td class="r">${inr(invoice.total)}</td></tr>
     </table>
+    ${photos ? photoSection("Before — at arrival", photos.before) : ""}
+    ${photos ? photoSection("After — at delivery", photos.after) : ""}
   </body></html>`;
 }
 

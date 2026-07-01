@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Alert, Image, Pressable, ScrollView, TextInput, View } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+import { ActivityIndicator, Image, Pressable, ScrollView, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Txt } from "@/components/ui/Txt";
@@ -49,15 +48,6 @@ export function DeliverySheet({
   const hasNote = note.trim().length > 0 || !!voice;
   const canConfirm = photosDone && hasNote && !submitting;
 
-  const capture = async (side: CompletionSide) => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Camera access needed", "Enable camera permission to take delivery photos.");
-      return;
-    }
-    onCapture(side);
-  };
-
   const confirm = () => {
     onConfirm(
       voice ? { audioUri: voice.uri, seconds: voice.seconds } : { text: note.trim() },
@@ -91,14 +81,16 @@ export function DeliverySheet({
                 key={side}
                 className="flex-1"
                 disabled={busy}
-                onPress={() => capture(side)}
+                onPress={() => onCapture(side)}
                 style={{ opacity: busy ? 0.5 : 1 }}
               >
                 <View
                   className="items-center justify-center overflow-hidden rounded-[10px] bg-[#F3F4F6]"
                   style={{ aspectRatio: 1, borderWidth: uri ? 0 : 1, borderColor: "#E5E7EB", borderStyle: "dashed" }}
                 >
-                  {uri ? (
+                  {busy ? (
+                    <ActivityIndicator size="small" color="#9CA3AF" />
+                  ) : uri ? (
                     <Image source={{ uri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
                   ) : (
                     <Icon name="camera" size={18} color="#9CA3AF" weight="regular" />

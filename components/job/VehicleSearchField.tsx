@@ -7,6 +7,7 @@ import { Plate } from "@/components/ui/Plate";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Icon } from "@/components/Icon";
 import { JobField } from "./JobField";
+import { compressPhoto } from "@/lib/media/compress";
 import { C, cardShadow } from "@/lib/theme";
 import { useVehicleSearch } from "@/lib/api/hooks/queries";
 import type { VehicleType } from "@/types/api";
@@ -35,7 +36,7 @@ export function VehicleSearchField({ job }: { job: NewJob }) {
       const res = fromCamera
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
-      if (!res.canceled && res.assets?.[0]) job.setVehiclePhotoUri(res.assets[0].uri);
+      if (!res.canceled && res.assets?.[0]) job.setVehiclePhotoUri(await compressPhoto(res.assets[0]));
     };
     Alert.alert("Vehicle photo", undefined, [
       { text: "Take Photo", onPress: () => launch(true) },

@@ -12,8 +12,10 @@ const LABELS: Record<CompletionSide, string> = {
   right: "Right",
 };
 
-// Mandatory walk-around photos captured at completion. Technicians capture each
-// side (camera); everyone can review the gallery and send it to the customer.
+// Mandatory walk-around photos, best captured when the vehicle arrives — they
+// document its condition before work starts (and gate marking the job
+// complete). Anyone on the job can capture; everyone can review the gallery
+// and send it to the customer. Still `completionPhotos` on the API contract.
 export function CompletionPhotos({
   photos,
   canCapture,
@@ -37,7 +39,7 @@ export function CompletionPhotos({
   return (
     <Card className="mt-[11px] p-[13px]">
       <View className="mb-[10px] flex-row items-center justify-between">
-        <Txt className="font-bold text-[13px]">Completion photos</Txt>
+        <Txt className="font-bold text-[13px]">Arrival photos</Txt>
         <Txt className={`font-bold text-[11px] ${complete ? "text-[#16A34A]" : "text-muted"}`}>
           {have}/{COMPLETION_SIDES.length}
         </Txt>
@@ -76,7 +78,7 @@ export function CompletionPhotos({
         <Button label="Send to customer" variant="wa" icon="paper-plane-tilt" small className="mt-[11px]" onPress={onSend} />
       ) : canCapture ? (
         <Txt className="mt-[10px] text-center font-medium text-[11px] text-muted">
-          Capture all four sides to complete the job.
+          Snap all four sides when the vehicle arrives — needed before the job can be completed.
         </Txt>
       ) : null}
     </Card>
