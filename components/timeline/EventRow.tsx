@@ -1,5 +1,3 @@
-import { View } from "react-native";
-import { ReadReceipt } from "@/components/chat/ReadReceipt";
 import { CommentBubble } from "./CommentBubble";
 import { PhotoCard } from "./PhotoCard";
 import { VoiceCard } from "./VoiceCard";
@@ -8,48 +6,37 @@ import { StatusPill } from "./StatusPill";
 import { ApprovalCard } from "./ApprovalCard";
 import { SystemLine } from "./SystemLine";
 import { isOwnEvent } from "./useEventReceipts";
+import type { TickState } from "./useTicks";
 import type { JobEvent, Person } from "@/types/api";
 
 // Renders one timeline event by switching on `event.type`. `me` decides which
-// messages align right (own); `seenBy` lists participants who have read up to
-// this (own) message — shown as tiny avatars beneath it.
+// messages align right (own); `tick` is the WhatsApp-style delivery/read glyph
+// shown inline at the end of an own message (sent ✓ / read ✓✓).
 export function EventRow({
   event,
   me,
-  seenBy,
+  tick,
 }: {
   event: JobEvent;
   me?: Person;
-  seenBy?: Person[];
+  tick?: TickState;
 }) {
   const own = isOwnEvent(event, me);
-  const body = renderBody();
 
-  return own && seenBy?.length ? (
-    <View>
-      {body}
-      <ReadReceipt people={seenBy} />
-    </View>
-  ) : (
-    body
-  );
-
-  function renderBody() {
-    switch (event.type) {
-      case "COMMENT":
-        return <CommentBubble ev={event} own={own} />;
-      case "PHOTO":
-        return <PhotoCard ev={event} own={own} />;
-      case "VOICE":
-        return <VoiceCard ev={event} own={own} />;
-      case "PART_ADDED":
-        return <PartCard ev={event} />;
-      case "STATUS_CHANGE":
-        return <StatusPill ev={event} />;
-      case "APPROVAL":
-        return <ApprovalCard ev={event} />;
-      case "SYSTEM":
-        return <SystemLine ev={event} />;
-    }
+  switch (event.type) {
+    case "COMMENT":
+      return <CommentBubble ev={event} own={own} tick={tick} />;
+    case "PHOTO":
+      return <PhotoCard ev={event} own={own} tick={tick} />;
+    case "VOICE":
+      return <VoiceCard ev={event} own={own} tick={tick} />;
+    case "PART_ADDED":
+      return <PartCard ev={event} />;
+    case "STATUS_CHANGE":
+      return <StatusPill ev={event} />;
+    case "APPROVAL":
+      return <ApprovalCard ev={event} />;
+    case "SYSTEM":
+      return <SystemLine ev={event} />;
   }
 }

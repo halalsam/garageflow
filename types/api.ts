@@ -18,11 +18,13 @@ export type Person = { id?: string; name: string; initials: string; color: strin
 
 export type Job = {
   id: string;
+  vehicleId: string;
   plate: string;
   make: string;
   model: string;
   year: number;
   type: string; // HATCHBACK / SUV / SEDAN
+  photoUrl?: string; // the vehicle's photo, when one was captured
   bay?: string;
   customer: Person;
   tech?: Person;
@@ -38,7 +40,7 @@ export type Job = {
 // A per-user read marker: who has read the chat and up to when (ISO).
 export type JobRead = { by: Person; atISO: string };
 
-// One of the four mandatory walk-around photos captured at job completion.
+// One of the four mandatory walk-around photos captured at completion / delivery.
 export type CompletionSide = "front" | "back" | "left" | "right";
 export type CompletionPhoto = { side: CompletionSide; uri: string };
 export const COMPLETION_SIDES: CompletionSide[] = ["front", "back", "left", "right"];
@@ -48,6 +50,12 @@ export const COMPLETION_SIDES: CompletionSide[] = ["front", "back", "left", "rig
 export type JobDetail = Job & {
   reads?: JobRead[];
   completionPhotos?: CompletionPhoto[];
+  // Hand-off (delivery) walk-around photos + the note captured at delivery.
+  deliveryPhotos?: CompletionPhoto[];
+  deliveryNote?: string;
+  deliveryNoteAudioUrl?: string;
+  // Customer phone (detail-only) powers the call / WhatsApp actions.
+  customerPhone?: string;
 };
 
 // ── Job-card events (the realtime timeline) ─────────────────────────────────
@@ -115,6 +123,7 @@ export type Vehicle = {
   model: string;
   year: number;
   type: VehicleType;
+  photoUrl?: string;
 };
 
 // GET /vehicles?plate= returns each vehicle with its owner inlined.
@@ -143,6 +152,7 @@ export type Approval = {
   plate: string;
   car: string; // "Tata Nexon"
   customer: string; // "Rakesh K."
+  customerPhone?: string;
   submittedBy: Person;
   ago: string; // "12m ago"
   lines: ApprovalLine[];

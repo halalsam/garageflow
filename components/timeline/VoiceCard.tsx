@@ -1,8 +1,9 @@
 import { View } from "react-native";
-import { Icon } from "@/components/Icon";
 import { Row, Bubble, BubbleTime } from "@/components/chat/Chat";
 import { VoiceMessage } from "@/components/chat/VoiceMessage";
+import { Ticks } from "@/components/timeline/Ticks";
 import { fmtDuration } from "@/components/chat/useChat";
+import type { TickState } from "@/components/timeline/useTicks";
 import type { JobEvent } from "@/types/api";
 
 // A voice note. The audio plays from its url (local uri while uploading, storage
@@ -10,9 +11,11 @@ import type { JobEvent } from "@/types/api";
 export function VoiceCard({
   ev,
   own,
+  tick,
 }: {
   ev: Extract<JobEvent, { type: "VOICE" }>;
   own: boolean;
+  tick?: TickState;
 }) {
   const dur = fmtDuration(Math.round((ev.payload.durationMs ?? 0) / 1000));
   return (
@@ -21,12 +24,7 @@ export function VoiceCard({
         <VoiceMessage uri={ev.payload.url} dur={dur} />
         <View className="flex-row items-center self-end" style={{ gap: 3 }}>
           <BubbleTime>{ev.time}</BubbleTime>
-          {own && ev.status === "sending" ? (
-            <Icon name="clock" size={10} color="#A1A1AA" weight="bold" />
-          ) : null}
-          {own && ev.status === "failed" ? (
-            <Icon name="warning-circle" size={11} color="#EF4444" weight="fill" />
-          ) : null}
+          {own ? <Ticks state={tick} onLight /> : null}
         </View>
       </Bubble>
     </Row>

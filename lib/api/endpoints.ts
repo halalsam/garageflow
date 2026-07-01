@@ -76,6 +76,8 @@ export const presignUpload = (id: string, contentType: string) =>
   api.post<PresignedUpload>(`/jobs/${id}/uploads/presign`, { contentType });
 export const uploadCompletionPhoto = (id: string, form: FormData) =>
   api.postForm<JobDetail>(`/jobs/${id}/completion-photos`, form);
+export const uploadDeliveryPhoto = (id: string, form: FormData) =>
+  api.postForm<JobDetail>(`/jobs/${id}/delivery-photos`, form);
 
 // ── Catalogue ──
 export const fetchCatalogue = (kind?: "part" | "service", signal?: AbortSignal) =>
@@ -84,6 +86,8 @@ export const fetchCatalogue = (kind?: "part" | "service", signal?: AbortSignal) 
 // ── Vehicles & customers (job creation: plate search + customer picker) ──
 export const fetchVehicles = (plate?: string, signal?: AbortSignal) =>
   api.get<VehicleHit[]>("/vehicles", { plate }, signal);
+export const uploadVehiclePhoto = (id: string, form: FormData) =>
+  api.postForm<VehicleHit>(`/vehicles/${id}/photo`, form);
 export const fetchCustomers = (query?: string, signal?: AbortSignal) =>
   api.get<Paginated<Customer>>("/customers", { query }, signal);
 

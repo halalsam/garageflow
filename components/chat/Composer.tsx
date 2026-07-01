@@ -1,20 +1,21 @@
-import { useRef, useState } from "react";
-import { Animated, PanResponder, Pressable, TextInput, View } from "react-native";
-import * as Haptics from "expo-haptics";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/Icon";
+import { ComposerField } from "@/components/chat/ComposerField";
+import { LockedRecordingBar } from "@/components/chat/LockedRecordingBar";
+import { MicSendButton } from "@/components/chat/MicSendButton";
 import { RecordingBar } from "@/components/chat/RecordingBar";
-import { useVoiceRecorder } from "@/components/chat/useVoiceRecorder";
+import { useComposerGesture } from "@/components/chat/useComposerGesture";
 
-const HOLD_DELAY = 220; // ms a press must last before it becomes a hold-to-record
-const CANCEL_DX = -90; // px the finger must slide left to arm cancel
-const MIC_MAX_SLIDE = -150; // furthest the mic follows the finger
-
-// Interactive message composer.
-// - Type + tap send to post text.
-// - Tap the image button to attach a photo.
-// - TAP the mic to open the full recording overlay (unchanged behaviour).
-// - HOLD the mic to record WhatsApp-style: release to send, slide left to cancel.
+// WhatsApp-style message composer. Drives a 5-state machine — Idle · Typing ·
+// Recording · Locked · Canceling — across a bottom-locked row.
+//
+// - Type + tap send (mic morphs to a send arrow) to post text.
+// - Tap the paperclip / camera to attach.
+// - HOLD the mic to record: release to send, slide left to cancel, swipe up to
+//   lock into hands-free recording.
+// - TAP the mic opens the full-screen overlay (onTapMic), unchanged.
 export function Composer({
   placeholder = "Add a note…",
   onSend,
@@ -36,25 +37,8 @@ export function Composer({
   const [text, setText] = useState("");
   const hasText = text.trim().length > 0;
 
-  const rec = useVoiceRecorder();
-  const [holding, setHolding] = useState(false);
-  const [cancelArmed, setCancelArmed] = useState(false);
-
-  // Refs keep the (one-time) PanResponder closures reading the latest values.
-  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isHoldRef = useRef(false);
-  const cancelRef = useRef(false);
-  const durationRef = useRef(0);
-  durationRef.current = rec.durationMillis;
-  const micX = useRef(new Animated.Value(0)).current;
-  const micScale = useRef(new Animated.Value(1)).current;
-  const latest = useRef({ onTapMic, onSendVoice, start: rec.start, stop: rec.stop });
-  latest.current = { onTapMic, onSendVoice, start: rec.start, stop: rec.stop };
-
-  const resetMic = () => {
-    Animated.spring(micX, { toValue: 0, useNativeDriver: true, speed: 20 }).start();
-    Animated.spring(micScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
-  };
+  const gc = useComposerGesture({ hasText, onTapMic, onSendVoice });
+  const { state } = gc;
 
   const submit = () => {
     if (!hasText) return;
@@ -62,108 +46,37 @@ export function Composer({
     setText("");
   };
 
-  // Finalise a mic gesture. `terminated` means the OS cancelled the touch.
-  const finishRef = useRef<(terminated: boolean) => void>(() => {});
-  finishRef.current = async (terminated: boolean) => {
-    if (holdTimer.current) {
-      // Released before the hold threshold → it was a tap.
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-      Haptics.selectionAsync();
-      latest.current.onTapMic?.();
-      return;
-    }
-    if (!isHoldRef.current) return; // hold never started (e.g. permission denied)
-    isHoldRef.current = false;
-    setHolding(false);
-    setCancelArmed(false);
-    resetMic();
-    const cancelled = terminated || cancelRef.current;
-    cancelRef.current = false;
-    const seconds = Math.round(durationRef.current / 1000);
-    const uri = await latest.current.stop();
-    if (!cancelled && uri && seconds >= 1) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      latest.current.onSendVoice?.(uri, seconds);
-    }
-  };
-
-  const pan = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        cancelRef.current = false;
-        setCancelArmed(false);
-        micX.setValue(0);
-        holdTimer.current = setTimeout(async () => {
-          holdTimer.current = null;
-          const ok = await latest.current.start();
-          if (!ok) return;
-          isHoldRef.current = true;
-          setHolding(true);
-          Animated.spring(micScale, { toValue: 1.7, useNativeDriver: true, speed: 16, bounciness: 9 }).start();
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        }, HOLD_DELAY);
-      },
-      onPanResponderMove: (_e, g) => {
-        if (!isHoldRef.current) return;
-        // Mic follows the finger to the left while sliding toward cancel.
-        micX.setValue(Math.max(MIC_MAX_SLIDE, Math.min(0, g.dx)));
-        const armed = g.dx < CANCEL_DX;
-        if (armed !== cancelRef.current) {
-          cancelRef.current = armed;
-          setCancelArmed(armed);
-          if (armed) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        }
-      },
-      onPanResponderRelease: () => finishRef.current(false),
-      onPanResponderTerminate: () => finishRef.current(true),
-    }),
-  ).current;
-
   const paddingBottom = insets.bottom > 0 ? insets.bottom + 8 : 16;
+  const recording = state === "Recording" || state === "Canceling";
 
   return (
     <View
-      className="flex-row items-center border-t border-[#F0F0F2] bg-white px-[13px] pt-[11px]"
+      className="flex-row items-end border-t border-[#F0F0F2] bg-white px-[13px] pt-[9px]"
       style={{ gap: 9, paddingBottom }}
     >
-      {holding ? (
-        <RecordingBar millis={rec.durationMillis} cancelArmed={cancelArmed} />
+      {state === "Locked" ? (
+        <LockedRecordingBar millis={gc.durationMillis} onCancel={gc.cancelLocked} onSend={gc.sendLocked} />
       ) : (
         <>
-          <Pressable onPress={onAttach} className="h-[44px] w-[44px] items-center justify-center rounded-full bg-line">
-            <Icon name="paperclip" size={21} weight="bold" color="#6B7280" />
-          </Pressable>
-          <View className="flex-1 flex-row items-center rounded-full bg-[#F3F4F6] px-[16px] py-[8px]" style={{ gap: 8 }}>
-            {smiley ? <Icon name="smiley" size={18} color="#9CA3AF" /> : null}
-            <TextInput
-              value={text}
-              onChangeText={setText}
-              placeholder={placeholder}
-              placeholderTextColor="#9CA3AF"
-              multiline
-              className="flex-1 font-sans font-medium text-[13px] text-ink"
-              style={{ maxHeight: 96, paddingTop: 0, paddingBottom: 0 }}
-            />
-            <Pressable onPress={onPickPhoto} hitSlop={8}>
-              <Icon name="image" size={20} weight="regular" color="#9CA3AF" />
-            </Pressable>
-          </View>
-        </>
-      )}
+          {recording ? (
+            <RecordingBar millis={gc.durationMillis} canceling={state === "Canceling"} />
+          ) : (
+            <>
+              <Pressable onPress={onAttach} className="h-[48px] w-[48px] items-center justify-center rounded-full">
+                <Icon name="paperclip" size={22} weight="bold" color="#6B7280" />
+              </Pressable>
+              <ComposerField
+                value={text}
+                onChangeText={setText}
+                placeholder={placeholder}
+                smiley={smiley}
+                onPickPhoto={onPickPhoto}
+              />
+            </>
+          )}
 
-      {hasText && !holding ? (
-        <Pressable onPress={submit} className="h-[44px] w-[44px] items-center justify-center rounded-full bg-orange active:opacity-80">
-          <Icon name="paper-plane-tilt" size={20} weight="fill" color="#fff" />
-        </Pressable>
-      ) : (
-        <Animated.View {...pan.panHandlers} style={{ zIndex: 10, transform: [{ translateX: micX }, { scale: micScale }] }}>
-          <View className={`h-[44px] w-[44px] items-center justify-center rounded-full ${holding ? "bg-[#EF4444]" : "bg-orange"}`}>
-            <Icon name="microphone" size={21} weight="fill" color="#fff" />
-          </View>
-        </Animated.View>
+          <MicSendButton hasText={hasText} recording={recording} gc={gc} onSend={submit} />
+        </>
       )}
     </View>
   );

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { EventRow } from "./EventRow";
-import { useEventReceipts } from "./useEventReceipts";
+import { useTicks } from "./useTicks";
 import type { JobEvent, JobRead, Person } from "@/types/api";
 
 // The realtime timeline. FlashList v2 has no `inverted` prop — the chat pattern
@@ -24,7 +24,7 @@ export function TimelineFeed({
   onLoadOlder?: () => void;
   hasMore?: boolean;
 }) {
-  const receipts = useEventReceipts(events, me, reads);
+  const ticks = useTicks(events, me, reads);
   const data = useMemo(() => [...events].reverse(), [events]);
 
   // FlashList needs a flex-sized parent to fill the space between the header and
@@ -34,7 +34,7 @@ export function TimelineFeed({
       <FlashList
         data={data}
         keyExtractor={(it) => it.clientId ?? it.id}
-        renderItem={({ item }) => <EventRow event={item} me={me} seenBy={receipts[item.id]} />}
+        renderItem={({ item }) => <EventRow event={item} me={me} tick={ticks[item.id]} />}
         ItemSeparatorComponent={Separator}
         contentContainerStyle={{ padding: 14 }}
         keyboardDismissMode="interactive"

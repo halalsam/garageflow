@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, TextInput, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { Txt } from "@/components/ui/Txt";
 import { Card } from "@/components/ui/Card";
 import { Plate } from "@/components/ui/Plate";
@@ -22,6 +23,26 @@ export function VehicleSearchField({ job }: { job: NewJob }) {
   const [manual, setManual] = useState(false);
   const { data: hits, isFetching } = useVehicleSearch(term);
   const showResults = term.trim().length >= 2 && !job.vehicle;
+
+  // Snap a photo of the vehicle (camera or library). Held locally; uploaded once
+  // the job/vehicle exists.
+  const pickVehiclePhoto = () => {
+    const launch = async (fromCamera: boolean) => {
+      const perm = fromCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
+      const res = fromCamera
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
+      if (!res.canceled && res.assets?.[0]) job.setVehiclePhotoUri(res.assets[0].uri);
+    };
+    Alert.alert("Vehicle photo", undefined, [
+      { text: "Take Photo", onPress: () => launch(true) },
+      { text: "Choose from Library", onPress: () => launch(false) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   if (job.vehicle) {
     return (
@@ -159,6 +180,30 @@ export function VehicleSearchField({ job }: { job: NewJob }) {
                 );
               })}
             </View>
+          </View>
+
+          {/* optional vehicle photo */}
+          <View>
+            <SectionLabel>PHOTO (OPTIONAL)</SectionLabel>
+            <Pressable className="mt-[8px]" onPress={pickVehiclePhoto}>
+              {job.vehiclePhotoUri ? (
+                <View className="overflow-hidden rounded-card" style={{ height: 150 }}>
+                  <Image source={{ uri: job.vehiclePhotoUri }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                  <View className="absolute bottom-[8px] right-[8px] flex-row items-center rounded-full bg-black/55 px-[10px] py-[5px]" style={{ gap: 5 }}>
+                    <Icon name="camera" size={13} color="#fff" weight="fill" />
+                    <Txt className="font-bold text-[11px] text-white">Change</Txt>
+                  </View>
+                </View>
+              ) : (
+                <View
+                  className="items-center justify-center rounded-card bg-white"
+                  style={{ height: 96, borderWidth: 1.5, borderColor: "#E5E7EB", borderStyle: "dashed" }}
+                >
+                  <Icon name="camera" size={22} color="#9CA3AF" weight="regular" />
+                  <Txt className="mt-[6px] font-medium text-[12px] text-muted">Add a photo of the vehicle</Txt>
+                </View>
+              )}
+            </Pressable>
           </View>
         </View>
       ) : null}

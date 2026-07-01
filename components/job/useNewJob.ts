@@ -43,6 +43,10 @@ export function useNewJob() {
   const [odometer, setOdometer] = useState("");
   const [lines, setLines] = useState<JobLine[]>([]);
 
+  // Optional local photo of the vehicle, captured before the job exists. Uploaded
+  // after create (POST /vehicles/:id/photo) since presign needs a real id.
+  const [vehiclePhotoUri, setVehiclePhotoUri] = useState<string | null>(null);
+
   // ── Vehicle actions ──
   const selectVehicle = (hit: VehicleHit) => {
     setVehicle(hit);
@@ -152,6 +156,8 @@ export function useNewJob() {
     setComplaint,
     odometer,
     setOdometer,
+    vehiclePhotoUri,
+    setVehiclePhotoUri,
     // lines
     lines,
     addLine,

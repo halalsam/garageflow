@@ -2,6 +2,8 @@ import { Image, View } from "react-native";
 import { Txt } from "@/components/ui/Txt";
 import { Icon } from "@/components/Icon";
 import { Row, Bubble, BubbleTime } from "@/components/chat/Chat";
+import { Ticks } from "@/components/timeline/Ticks";
+import type { TickState } from "@/components/timeline/useTicks";
 import type { JobEvent } from "@/types/api";
 
 // A photo attachment. The image is shown from its url (a local uri while the
@@ -9,9 +11,11 @@ import type { JobEvent } from "@/types/api";
 export function PhotoCard({
   ev,
   own,
+  tick,
 }: {
   ev: Extract<JobEvent, { type: "PHOTO" }>;
   own: boolean;
+  tick?: TickState;
 }) {
   const uploading = own && ev.status === "sending";
   return (
@@ -36,9 +40,10 @@ export function PhotoCard({
             </View>
           ) : null}
         </View>
-        <BubbleTime own={own} className="px-[4px]">
-          {ev.time}
-        </BubbleTime>
+        <View className="flex-row items-center self-end px-[4px]" style={{ gap: 3 }}>
+          <BubbleTime own={own}>{ev.time}</BubbleTime>
+          {own ? <Ticks state={tick} onLight /> : null}
+        </View>
       </Bubble>
     </Row>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Pressable, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,13 +13,21 @@ import { TimelineFeed } from "@/components/timeline/TimelineFeed";
 import { AddPartSheet } from "@/components/screens/AddPartSheet";
 import { VoiceOverlay } from "@/components/screens/VoiceOverlay";
 import { CompletionPhotos } from "@/components/job/CompletionPhotos";
+import { DeliverySheet } from "@/components/job/DeliverySheet";
 import { Loading, ErrorState } from "@/components/ui/QueryState";
 import { Icon } from "@/components/Icon";
 import { useAuth } from "@/lib/auth";
 import { useJob } from "@/lib/api/hooks/queries";
 import { useJobEvents } from "@/lib/api/hooks/useJobEvents";
-import { useUpdateJob, useMarkJobRead, useUploadCompletionPhoto } from "@/lib/api/hooks/mutations";
+import {
+  useUpdateJob,
+  useMarkJobRead,
+  useUploadCompletionPhoto,
+  useUploadDeliveryPhoto,
+} from "@/lib/api/hooks/mutations";
+import { uploadJobFile } from "@/lib/api/upload";
 import { shareCompletionReport } from "@/lib/job/completionReport";
+import { callCustomer, whatsappCustomer, shareCustomerReport } from "@/lib/share/contact";
 import { COMPLETION_SIDES, type CompletionSide, type Person } from "@/types/api";
 
 export default function JobTimeline() {
@@ -48,10 +56,14 @@ export default function JobTimeline() {
   }, [tail, user]);
 
   const uploadPhoto = useUploadCompletionPhoto(id);
+  const uploadDelivery = useUploadDeliveryPhoto(id);
   const [busySide, setBusySide] = useState<CompletionSide | null>(null);
+  const [busyDeliverySide, setBusyDeliverySide] = useState<CompletionSide | null>(null);
 
   const [sheet, setSheet] = useState(false);
   const [voice, setVoice] = useState(false);
+  const [deliverySheet, setDeliverySheet] = useState(false);
+  const [delivering, setDelivering] = useState(false);
 
   if (isLoading) {
     return (
@@ -94,27 +106,44 @@ export default function JobTimeline() {
     ]);
   };
 
-  // Capture one mandatory completion photo for a side (camera only).
-  const captureSide = async (side: CompletionSide) => {
+  // Snap one walk-around side (camera only) and return a ready-to-post FormData.
+  const captureFormForSide = async (side: CompletionSide): Promise<FormData | null> => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert("Camera access needed", "Enable camera permission to take completion photos.");
-      return;
+      Alert.alert("Camera access needed", "Enable camera permission to take photos.");
+      return null;
     }
     const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (res.canceled || !res.assets?.[0]) return;
+    if (res.canceled || !res.assets?.[0]) return null;
     const uri = res.assets[0].uri;
     const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
     const form = new FormData();
     form.append("side", side);
     form.append("image", { uri, name: `${side}.${ext}`, type: `image/${ext === "jpg" ? "jpeg" : ext}` } as any);
+    return form;
+  };
+
+  // Capture one mandatory completion photo for a side.
+  const captureSide = async (side: CompletionSide) => {
+    const form = await captureFormForSide(side);
+    if (!form) return;
     setBusySide(side);
     uploadPhoto.mutate(form, { onSettled: () => setBusySide(null) });
   };
 
+  // Capture one mandatory delivery photo for a side.
+  const captureDeliverySide = async (side: CompletionSide) => {
+    const form = await captureFormForSide(side);
+    if (!form) return;
+    setBusyDeliverySide(side);
+    uploadDelivery.mutate(form, { onSettled: () => setBusyDeliverySide(null) });
+  };
+
   const photos = job.completionPhotos ?? [];
+  const deliveryPhotos = job.deliveryPhotos ?? [];
   const photosComplete = COMPLETION_SIDES.every((s) => photos.some((p) => p.side === s));
   const isCompleted = job.status === "COMPLETED";
+  const isDelivered = job.status === "DELIVERED";
 
   const completeJob = () => {
     if (!photosComplete) {
@@ -124,18 +153,51 @@ export default function JobTimeline() {
     updateJob.mutate({ status: "COMPLETED", progress: 100 });
   };
 
+  // Finalise the guided delivery: upload the voice note (if any), then PATCH the
+  // job to DELIVERED with the note. The sheet gates photos + note before calling.
+  const confirmDelivery = async (note: { text?: string; audioUri?: string; seconds?: number }) => {
+    setDelivering(true);
+    try {
+      const body: Record<string, unknown> = { status: "DELIVERED" };
+      if (note.audioUri) {
+        body.deliveryNoteAudioUrl = await uploadJobFile(id, note.audioUri, "audio");
+      } else if (note.text) {
+        body.deliveryNote = note.text;
+      }
+      await updateJob.mutateAsync(body);
+      setDeliverySheet(false);
+    } catch (err: any) {
+      Alert.alert("Couldn't deliver", err?.message ?? "Please try again.");
+    } finally {
+      setDelivering(false);
+    }
+  };
+
+  const openDelivery = () => {
+    if (!isCompleted) {
+      Alert.alert("Complete first", "Mark the job complete before delivering the vehicle.");
+      return;
+    }
+    setDeliverySheet(true);
+  };
+
   const sendReport = () => shareCompletionReport(job, photos);
+  const shareToCustomer = () =>
+    shareCustomerReport(job, [...photos, ...deliveryPhotos], "Vehicle report");
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-[#F0EEF6]">
-      <KeyboardAvoidingView className="flex-1" behavior="padding">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         {/* header */}
         <View className="bg-white px-[14px] pb-[12px] pt-[8px]" style={{ shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }}>
           <View className="flex-row items-center" style={{ gap: 10 }}>
             <Pressable onPress={() => router.back()} hitSlop={10}>
               <Icon name="caret-left" size={21} weight="bold" />
             </Pressable>
-            <CarThumb width={42} height={42} radius={11} iconSize={20} />
+            <CarThumb width={42} height={42} radius={11} iconSize={20} uri={job.photoUrl} />
             <View className="flex-1">
               <Plate number={job.plate} scale={0.82} />
               <Txt className="mt-[3px] font-bold text-[13px]">
@@ -149,31 +211,57 @@ export default function JobTimeline() {
           <View className="mt-[11px] flex-row" style={{ gap: 8 }}>
             {isManager ? (
               <>
-                <Button label="Reassign" variant="ghost" icon="arrows-clockwise" iconWeight="bold" small className="flex-1" />
-                <Button label="Customer" variant="ghost" icon="phone" iconWeight="bold" small className="flex-1" />
-                <Button label="Invoice" variant="pur" icon="receipt" small className="flex-1" onPress={() => router.push(`/invoice/${job.id}`)} />
-              </>
-            ) : (
-              <>
-                <Button label="Pause" icon="pause" small className="flex-1 bg-[#FEF6E7]" textClassName="text-[#D97706]" />
                 <Button
-                  label={isCompleted ? "Completed" : updateJob.isPending ? "Saving…" : "Complete"}
-                  variant="green"
-                  icon="check"
+                  label="Call"
+                  variant="ghost"
+                  icon="phone"
+                  iconWeight="bold"
                   small
                   className="flex-1"
-                  style={!photosComplete && !isCompleted ? { opacity: 0.5 } : undefined}
-                  disabled={isCompleted || updateJob.isPending}
-                  onPress={completeJob}
+                  onPress={() => callCustomer(job.customerPhone)}
                 />
+                <Button
+                  label="WhatsApp"
+                  variant="wa"
+                  icon="whatsapp"
+                  small
+                  className="flex-1"
+                  onPress={shareToCustomer}
+                />
+                <Button label="Invoice" variant="pur" icon="receipt" small className="flex-1" onPress={() => router.push(`/invoice/${job.id}`)} />
               </>
-            )}
+            ) : !isCompleted && !isDelivered ? (
+              <Button
+                label={updateJob.isPending ? "Saving…" : "Mark complete"}
+                variant="green"
+                icon="check"
+                small
+                className="flex-1"
+                style={!photosComplete ? { opacity: 0.5 } : undefined}
+                disabled={updateJob.isPending}
+                onPress={completeJob}
+              />
+            ) : null}
           </View>
+
+          {/* Deliver: available to everyone once the job is complete. */}
+          {isCompleted || isDelivered ? (
+            <Button
+              label={isDelivered ? "Delivered" : "Deliver vehicle"}
+              variant={isDelivered ? "ghost" : "green"}
+              icon="seal-check"
+              small
+              className="mt-[8px]"
+              style={isDelivered ? { opacity: 0.6 } : undefined}
+              disabled={isDelivered}
+              onPress={openDelivery}
+            />
+          ) : null}
 
           {!isManager || photos.length ? (
             <CompletionPhotos
               photos={photos}
-              canCapture={!isManager && !isCompleted}
+              canCapture={!isManager && !isCompleted && !isDelivered}
               busySide={busySide}
               onCapture={captureSide}
               onSend={sendReport}
@@ -208,6 +296,15 @@ export default function JobTimeline() {
           setVoice(false);
           sendVoice(uri, seconds);
         }}
+      />
+      <DeliverySheet
+        visible={deliverySheet}
+        photos={deliveryPhotos}
+        busySide={busyDeliverySide}
+        submitting={delivering}
+        onClose={() => setDeliverySheet(false)}
+        onCapture={captureDeliverySide}
+        onConfirm={confirmDelivery}
       />
     </SafeAreaView>
   );

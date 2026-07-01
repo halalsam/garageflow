@@ -17,6 +17,7 @@ export function JobCardMedia({
   inset = 9,
   status,
   tone = "blue",
+  uri,
   children,
 }: {
   height: number;
@@ -25,10 +26,11 @@ export function JobCardMedia({
   inset?: number;
   status?: string;
   tone?: Tone;
+  uri?: string;
   children?: React.ReactNode;
 }) {
   return (
-    <CarThumb height={height}>
+    <CarThumb height={height} uri={uri}>
       <View className="absolute" style={{ left: inset, top: inset }}>
         <Plate number={plate} scale={plateScale} />
       </View>
@@ -50,7 +52,7 @@ export function JobCard({ job }: { job: Job }) {
       style={cardShadow}
       onPress={() => router.push(`/job/${job.id}`)}
     >
-      <JobCardMedia height={104} plate={job.plate} status={job.status} tone={job.tone}>
+      <JobCardMedia height={104} plate={job.plate} status={job.status} tone={job.tone} uri={job.photoUrl}>
         {job.bay ? (
           <View className="absolute bottom-[9px] left-[9px] rounded-[6px] bg-white/80 px-[7px] py-[3px]">
             <Txt className="font-bold text-[9px] text-[#8A8A93]" style={{ letterSpacing: 0.4 }}>

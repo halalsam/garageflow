@@ -74,6 +74,18 @@ export function useUploadCompletionPhoto(jobId: string) {
   });
 }
 
+// Upload a mandatory delivery photo for a side. Returns the updated job detail.
+export function useUploadDeliveryPhoto(jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (form: FormData) => e.uploadDeliveryPhoto(jobId, form),
+    onSuccess: (job) => {
+      qc.setQueryData(qk.job(jobId), job);
+      qc.invalidateQueries({ queryKey: qk.job(jobId) });
+    },
+  });
+}
+
 // Add catalogue parts to a job (decrements stock, appends PART timeline entries).
 export function useAddParts(jobId: string) {
   const qc = useQueryClient();

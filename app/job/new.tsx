@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { router } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt } from "@/components/ui/Txt";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,7 @@ import { LineItemRow } from "@/components/job/LineItemRow";
 import { LineItemPickerSheet } from "@/components/job/LineItemPickerSheet";
 import { JobField } from "@/components/job/JobField";
 import { useCreateJob } from "@/lib/api/hooks/mutations";
+import { uploadVehiclePhoto } from "@/lib/api/endpoints";
 import { ApiRequestError } from "@/lib/api/client";
 import { inr } from "@/lib/format";
 
@@ -22,12 +23,24 @@ import { inr } from "@/lib/format";
 export default function NewJobCard() {
   const job = useNewJob();
   const create = useCreateJob();
+  const insets = useSafeAreaInsets();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const submit = () => {
     if (!job.canSubmit || create.isPending) return;
     create.mutate(job.buildPayload(), {
-      onSuccess: (created) => router.replace(`/job/${created.id}`),
+      onSuccess: (created) => {
+        // Attach the captured vehicle photo now that the vehicle exists. Fire and
+        // forget — a failed upload shouldn't block navigating to the new job.
+        if (job.vehiclePhotoUri && created.vehicleId) {
+          const uri = job.vehiclePhotoUri;
+          const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
+          const form = new FormData();
+          form.append("image", { uri, name: `vehicle.${ext}`, type: `image/${ext === "jpg" ? "jpeg" : ext}` } as any);
+          void uploadVehiclePhoto(created.vehicleId, form).catch(() => {});
+        }
+        router.replace(`/job/${created.id}`);
+      },
       onError: (err) => {
         const msg =
           err instanceof ApiRequestError && err.errors
@@ -40,6 +53,7 @@ export default function NewJobCard() {
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View className="flex-row items-center justify-between px-[18px] pb-[10px] pt-[6px]">
         <Txt className="font-black text-[21px]" style={{ letterSpacing: -0.5 }}>
           New Job Card
@@ -118,8 +132,8 @@ export default function NewJobCard() {
 
       {/* submit */}
       <View
-        className="border-t border-[#F0F0F2] bg-white px-[16px] pb-[16px] pt-[14px]"
-        style={{ shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } }}
+        className="border-t border-[#F0F0F2] bg-white px-[16px] pt-[14px]"
+        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom + 6 : 16, shadowColor: "#281E14", shadowOpacity: 0.06, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } }}
       >
         <Button
           label={create.isPending ? "Creating…" : job.lines.length > 0 ? "Create & send for review" : "Create job card"}
@@ -129,6 +143,7 @@ export default function NewJobCard() {
           onPress={submit}
         />
       </View>
+      </KeyboardAvoidingView>
 
       <LineItemPickerSheet job={job} visible={pickerOpen} onClose={() => setPickerOpen(false)} />
     </SafeAreaView>

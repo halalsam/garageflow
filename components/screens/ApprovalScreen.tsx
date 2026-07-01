@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { Alert } from "react-native";
 import { useApproval } from "@/lib/api/hooks/queries";
 import { useDecideApproval } from "@/lib/api/hooks/mutations";
+import { callCustomer, whatsappCustomer } from "@/lib/share/contact";
 import { inr } from "@/lib/format";
 export function ApprovalScreen({ id, back }: { id?: string; back?: boolean }) {
   const { data: approval, isLoading, isError, refetch } = useApproval(id ?? "");
@@ -94,8 +95,25 @@ export function ApprovalScreen({ id, back }: { id?: string; back?: boolean }) {
         <View className="mt-[16px]">
           <SectionLabel>CONTACT CUSTOMER</SectionLabel>
           <View className="mt-[10px] flex-row" style={{ gap: 10 }}>
-            <Button label="Call" variant="pur" icon="phone-call" className="flex-1" />
-            <Button label="WhatsApp" variant="wa" icon="whatsapp" className="flex-1" />
+            <Button
+              label="Call"
+              variant="pur"
+              icon="phone-call"
+              className="flex-1"
+              onPress={() => callCustomer(approval.customerPhone)}
+            />
+            <Button
+              label="WhatsApp"
+              variant="wa"
+              icon="whatsapp"
+              className="flex-1"
+              onPress={() =>
+                whatsappCustomer(
+                  approval.customerPhone,
+                  `Estimate for ${approval.car} (${approval.plate}): ${inr(approval.total)}. Please confirm to proceed.`,
+                )
+              }
+            />
           </View>
         </View>
 
