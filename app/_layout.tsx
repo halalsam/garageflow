@@ -3,7 +3,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/lib/auth";
 import { queryClient } from "@/lib/api/queryClient";
@@ -22,7 +22,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
+        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <AuthProvider>
             <PushNotificationsGate />
             <StatusBar style="dark" />
@@ -34,6 +34,7 @@ export default function RootLayout() {
               <Stack.Screen name="job/[id]" />
               <Stack.Screen name="job/new" options={{ presentation: "modal" }} />
               <Stack.Screen name="approval/[id]" />
+              <Stack.Screen name="notifications" />
               <Stack.Screen name="invoice/[id]" />
               <Stack.Screen name="finance/gst" />
               <Stack.Screen name="finance/expenses" />

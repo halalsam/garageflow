@@ -34,11 +34,9 @@ export function InvoiceScreen({ id }: { id?: string }) {
     }
   };
 
-  // With photos available the export button offers the attach toggle; without
-  // them it goes straight to the share sheet.
-  const onExport = invoice
-    ? () => (before.length + after.length > 0 ? setSheet(true) : share(false))
-    : undefined;
+  // The sheet always opens so the photo toggle stays discoverable; it disables
+  // the switch itself when the job has no photos yet.
+  const onExport = invoice ? () => setSheet(true) : undefined;
 
   return (
     <Screen>

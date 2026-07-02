@@ -26,6 +26,7 @@ export function ShareInvoiceSheet({
 }) {
   const [includePhotos, setIncludePhotos] = useState(false);
   const count = before.length + after.length;
+  const hasPhotos = count > 0;
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
@@ -43,24 +44,27 @@ export function ShareInvoiceSheet({
           <View className="flex-1 pr-[10px]">
             <Txt className="font-bold text-[14px]">Attach before & after photos</Txt>
             <Txt className="mt-[2px] font-medium text-[12px] text-muted">
-              {count} vehicle condition photo{count === 1 ? "" : "s"} added to the PDF
+              {hasPhotos
+                ? `${count} vehicle condition photo${count === 1 ? "" : "s"} added to the PDF`
+                : "No arrival or delivery photos on this job yet"}
             </Txt>
           </View>
           <Switch
-            value={includePhotos}
+            value={hasPhotos && includePhotos}
             onValueChange={setIncludePhotos}
+            disabled={!hasPhotos}
             trackColor={{ true: "#FF5A1F" }}
           />
         </View>
 
-        {includePhotos ? <PhotoStrip before={before} after={after} /> : null}
+        {hasPhotos && includePhotos ? <PhotoStrip before={before} after={after} /> : null}
 
         <Button
           label={sharing ? "Preparing…" : "Share"}
           icon="export"
           className="mt-[16px]"
           disabled={sharing}
-          onPress={() => onShare(includePhotos)}
+          onPress={() => onShare(hasPhotos && includePhotos)}
         />
       </View>
     </BottomSheet>

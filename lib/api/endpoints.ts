@@ -19,6 +19,7 @@ import type {
   JobDetail,
   JobEvent,
   JobEventsPage,
+  NotificationsInbox,
   PresignedUpload,
   Paginated,
   PayMethod,
@@ -39,6 +40,11 @@ export const registerPushToken = (token: string, platform?: "ios" | "android") =
   api.post<{ message: string }>("/notifications/register", { token, platform });
 export const unregisterPushToken = (token: string) =>
   api.post<{ message: string }>("/notifications/unregister", { token });
+
+// ── Notifications inbox (persisted copies of pushes) ──
+export const fetchNotifications = (signal?: AbortSignal) =>
+  api.get<NotificationsInbox>("/notifications", undefined, signal);
+export const markNotificationsRead = () => api.post<{ message: string }>("/notifications/read", {});
 
 // ── Jobs ──
 export type JobsQuery = { status?: string; mine?: boolean };

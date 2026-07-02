@@ -105,6 +105,20 @@ export type PresignedUpload = {
   headers: Record<string, string>;
 };
 
+// ── Notifications inbox ──────────────────────────────────────────────────────
+// A persisted copy of one push sent to the current user (GET /notifications).
+// `data` mirrors the push's deep-link payload; `jobCode` routes to /job/[id].
+export type AppNotification = {
+  id: string;
+  title: string;
+  body: string;
+  data?: { type: string; jobCode?: string };
+  atISO: string;
+  read: boolean;
+};
+
+export type NotificationsInbox = { items: AppNotification[]; unread: number };
+
 export type CatalogueItem = {
   id: string;
   name: string;

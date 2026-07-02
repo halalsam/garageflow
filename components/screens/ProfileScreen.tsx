@@ -1,4 +1,5 @@
 import { ScrollView, View } from "react-native";
+import Constants from "expo-constants";
 import { router } from "expo-router";
 import { Screen } from "@/components/ui/Screen";
 import { TopBar, HeaderIcon } from "@/components/ui/TopBar";
@@ -8,7 +9,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Metric } from "@/components/ui/Metric";
 import { RolePill } from "@/components/ui/RolePill";
 import { ListRow } from "@/components/ui/ListRow";
+import { UnreadBadge } from "@/components/notifications/UnreadBadge";
 import { useAuth } from "@/lib/auth";
+import { useNotifications } from "@/lib/api/hooks/queries";
 import { WORKSHOP } from "@/lib/format";
 import type { Role } from "@/types/api";
 
@@ -43,6 +46,7 @@ const ROLE_META: Record<Role, { bg: string; color: string; metrics: { num: strin
 export function ProfileScreen() {
   const { user, role, logout } = useAuth();
   const meta = ROLE_META[role];
+  const unread = useNotifications().data?.unread ?? 0;
 
   const signOut = async () => {
     await logout();
@@ -59,7 +63,7 @@ export function ProfileScreen() {
             <Txt className="font-bold text-[18px]" style={{ letterSpacing: -0.3 }}>
               {user?.name ?? "—"}
             </Txt>
-            <Txt className="mt-[4px] font-medium text-[13px] text-muted">{WORKSHOP} · since 2021</Txt>
+            <Txt className="mt-[4px] font-medium text-[13px] text-muted">{WORKSHOP}</Txt>
           </View>
           {user ? <RolePill icon={user.roleIcon} label={user.roleLabel} bg={meta.bg} color={meta.color} /> : null}
         </Card>
@@ -71,15 +75,16 @@ export function ProfileScreen() {
         </View>
 
         <Card className="mt-[10px] px-[16px] py-[4px]">
-          <ListRow icon="bell" iconBg="#FEF6E7" iconColor="#D97706" label="Notifications" chevron divider={false} />
           <ListRow
-            icon="globe"
-            iconBg="#EAF2FF"
-            iconColor="#2563EB"
-            label="Language"
-            right={<Txt className="font-medium text-[13px] text-muted">English</Txt>}
+            icon="bell"
+            iconBg="#FEF6E7"
+            iconColor="#D97706"
+            label="Notifications"
+            chevron
+            divider={false}
+            right={unread > 0 ? <UnreadBadge count={unread} /> : undefined}
+            onPress={() => router.push("/notifications")}
           />
-          <ListRow icon="question" iconBg="#F1F1F4" iconColor="#6B7280" label="Help & support" chevron />
           <ListRow
             icon="sign-out"
             iconBg="#FDECEC"
@@ -91,7 +96,7 @@ export function ProfileScreen() {
         </Card>
 
         <Txt className="mt-[14px] text-center font-medium text-[11px] text-muted">
-          Garage Flow v2.4 · Multi-workshop
+          Garage Flow v{Constants.expoConfig?.version ?? "1.0.0"}
         </Txt>
       </ScrollView>
     </Screen>

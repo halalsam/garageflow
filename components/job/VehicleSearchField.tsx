@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, TextInput, View } from "react-native";
-import * as ImagePicker from "expo-image-picker";
+import { ActivityIndicator, Image, Pressable, TextInput, View } from "react-native";
 import { Txt } from "@/components/ui/Txt";
 import { Card } from "@/components/ui/Card";
 import { Plate } from "@/components/ui/Plate";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { Icon } from "@/components/Icon";
 import { JobField } from "./JobField";
-import { compressPhoto } from "@/lib/media/compress";
+import { pickPhotoSource } from "@/lib/media/pickPhoto";
 import { C, cardShadow } from "@/lib/theme";
 import { useVehicleSearch } from "@/lib/api/hooks/queries";
 import type { VehicleType } from "@/types/api";
@@ -27,23 +26,7 @@ export function VehicleSearchField({ job }: { job: NewJob }) {
 
   // Snap a photo of the vehicle (camera or library). Held locally; uploaded once
   // the job/vehicle exists.
-  const pickVehiclePhoto = () => {
-    const launch = async (fromCamera: boolean) => {
-      const perm = fromCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
-      const res = fromCamera
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 })
-        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
-      if (!res.canceled && res.assets?.[0]) job.setVehiclePhotoUri(await compressPhoto(res.assets[0]));
-    };
-    Alert.alert("Vehicle photo", undefined, [
-      { text: "Take Photo", onPress: () => launch(true) },
-      { text: "Choose from Library", onPress: () => launch(false) },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  };
+  const pickVehiclePhoto = () => pickPhotoSource(job.setVehiclePhotoUri, "Vehicle photo");
 
   if (job.vehicle) {
     return (

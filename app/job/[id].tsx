@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Pressable, View } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Txt } from "@/components/ui/Txt";
@@ -12,6 +11,8 @@ import { Composer } from "@/components/chat/Composer";
 import { TimelineFeed } from "@/components/timeline/TimelineFeed";
 import { AddPartSheet } from "@/components/screens/AddPartSheet";
 import { VoiceOverlay } from "@/components/screens/VoiceOverlay";
+import { AssignTechSheet } from "@/components/job/AssignTechSheet";
+import { AssignedTechRow } from "@/components/job/AssignedTechRow";
 import { CompletionPhotos } from "@/components/job/CompletionPhotos";
 import { DeliverySheet } from "@/components/job/DeliverySheet";
 import { Loading, ErrorState } from "@/components/ui/QueryState";
@@ -25,8 +26,8 @@ import {
   useUploadCompletionPhoto,
   useUploadDeliveryPhoto,
 } from "@/lib/api/hooks/mutations";
-import { uploadJobFile } from "@/lib/api/upload";
-import { compressPhoto } from "@/lib/media/compress";
+import { photoForm, uploadJobFile } from "@/lib/api/upload";
+import { pickPhotoSource } from "@/lib/media/pickPhoto";
 import { shareCompletionReport } from "@/lib/job/completionReport";
 import { callCustomer, whatsappCustomer, shareCustomerReport } from "@/lib/share/contact";
 import { COMPLETION_SIDES, type CompletionSide, type Person } from "@/types/api";
@@ -65,6 +66,7 @@ export default function JobTimeline() {
   const [voice, setVoice] = useState(false);
   const [deliverySheet, setDeliverySheet] = useState(false);
   const [delivering, setDelivering] = useState(false);
+  const [assignSheet, setAssignSheet] = useState(false);
 
   if (isLoading) {
     return (
@@ -81,72 +83,30 @@ export default function JobTimeline() {
     );
   }
 
-  const takePhoto = async () => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Camera access needed", "Enable camera permission to take photos.");
-      return;
-    }
-    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (!res.canceled && res.assets?.[0]) sendPhoto(await compressPhoto(res.assets[0]));
-  };
+  // Attach a photo to the chat (camera or library).
+  const pickPhoto = () => pickPhotoSource(sendPhoto);
 
-  const chooseFromLibrary = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (!res.canceled && res.assets?.[0]) sendPhoto(await compressPhoto(res.assets[0]));
-  };
+  // Capture one mandatory arrival photo for a side (camera or library).
+  const captureSide = (side: CompletionSide) =>
+    pickPhotoSource((uri) => {
+      setBusySide(side);
+      uploadPhoto.mutate(photoForm(uri, { side }), {
+        onSettled: () => setBusySide(null),
+        onError: (err: any) =>
+          Alert.alert("Photo not uploaded", err?.message ?? "Check your connection and try again."),
+      });
+    }, `${side[0].toUpperCase()}${side.slice(1)} photo`);
 
-  // Let the user pick a source before attaching a photo.
-  const pickPhoto = () => {
-    Alert.alert("Add photo", undefined, [
-      { text: "Take Photo", onPress: takePhoto },
-      { text: "Choose from Library", onPress: chooseFromLibrary },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  };
-
-  // Snap one walk-around side (camera only) and return a ready-to-post FormData.
-  const captureFormForSide = async (side: CompletionSide): Promise<FormData | null> => {
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Camera access needed", "Enable camera permission to take photos.");
-      return null;
-    }
-    const res = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.7 });
-    if (res.canceled || !res.assets?.[0]) return null;
-    // compressPhoto always re-encodes to JPEG, so the form part is fixed.
-    const uri = await compressPhoto(res.assets[0]);
-    const form = new FormData();
-    form.append("side", side);
-    form.append("image", { uri, name: `${side}.jpg`, type: "image/jpeg" } as any);
-    return form;
-  };
-
-  // Capture one mandatory completion photo for a side.
-  const captureSide = async (side: CompletionSide) => {
-    const form = await captureFormForSide(side);
-    if (!form) return;
-    setBusySide(side);
-    uploadPhoto.mutate(form, {
-      onSettled: () => setBusySide(null),
-      onError: (err: any) =>
-        Alert.alert("Photo not uploaded", err?.message ?? "Check your connection and try again."),
-    });
-  };
-
-  // Capture one mandatory delivery photo for a side.
-  const captureDeliverySide = async (side: CompletionSide) => {
-    const form = await captureFormForSide(side);
-    if (!form) return;
-    setBusyDeliverySide(side);
-    uploadDelivery.mutate(form, {
-      onSettled: () => setBusyDeliverySide(null),
-      onError: (err: any) =>
-        Alert.alert("Photo not uploaded", err?.message ?? "Check your connection and try again."),
-    });
-  };
+  // Capture one mandatory delivery photo for a side (camera or library).
+  const captureDeliverySide = (side: CompletionSide) =>
+    pickPhotoSource((uri) => {
+      setBusyDeliverySide(side);
+      uploadDelivery.mutate(photoForm(uri, { side }), {
+        onSettled: () => setBusyDeliverySide(null),
+        onError: (err: any) =>
+          Alert.alert("Photo not uploaded", err?.message ?? "Check your connection and try again."),
+      });
+    }, `${side[0].toUpperCase()}${side.slice(1)} photo`);
 
   const photos = job.completionPhotos ?? [];
   const deliveryPhotos = job.deliveryPhotos ?? [];
@@ -268,6 +228,11 @@ export default function JobTimeline() {
             ) : null}
           </View>
 
+          {/* Who's wrenching on this job — managers can reassign. */}
+          {isManager ? (
+            <AssignedTechRow tech={job.tech} onPress={() => setAssignSheet(true)} />
+          ) : null}
+
           {/* Deliver: available to everyone once the job is complete. */}
           {isCompleted || isDelivered ? (
             <Button
@@ -312,6 +277,12 @@ export default function JobTimeline() {
       </KeyboardAvoidingView>
 
       <AddPartSheet jobId={job.id} visible={sheet} onClose={() => setSheet(false)} />
+      <AssignTechSheet
+        jobId={job.id}
+        current={job.tech}
+        visible={assignSheet}
+        onClose={() => setAssignSheet(false)}
+      />
       <VoiceOverlay
         visible={voice}
         onCancel={() => setVoice(false)}

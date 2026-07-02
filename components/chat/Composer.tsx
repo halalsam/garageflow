@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "@/components/Icon";
 import { ComposerField } from "@/components/chat/ComposerField";
 import { LockedRecordingBar } from "@/components/chat/LockedRecordingBar";
 import { MicSendButton } from "@/components/chat/MicSendButton";
 import { RecordingBar } from "@/components/chat/RecordingBar";
 import { useComposerGesture } from "@/components/chat/useComposerGesture";
+import { useComposerInset } from "@/components/chat/useComposerInset";
 
 // WhatsApp-style message composer. Drives a 5-state machine — Idle · Typing ·
 // Recording · Locked · Canceling — across a bottom-locked row.
@@ -33,7 +33,7 @@ export function Composer({
   onPickPhoto?: () => void;
   smiley?: boolean;
 }) {
-  const insets = useSafeAreaInsets();
+  const paddingBottom = useComposerInset();
   const [text, setText] = useState("");
   const hasText = text.trim().length > 0;
 
@@ -46,7 +46,6 @@ export function Composer({
     setText("");
   };
 
-  const paddingBottom = insets.bottom > 0 ? insets.bottom + 8 : 16;
   const recording = state === "Recording" || state === "Canceling";
 
   return (

@@ -14,6 +14,7 @@ import { LineItemPickerSheet } from "@/components/job/LineItemPickerSheet";
 import { JobField } from "@/components/job/JobField";
 import { useCreateJob } from "@/lib/api/hooks/mutations";
 import { uploadVehiclePhoto } from "@/lib/api/endpoints";
+import { photoForm } from "@/lib/api/upload";
 import { ApiRequestError } from "@/lib/api/client";
 import { inr } from "@/lib/format";
 
@@ -33,11 +34,7 @@ export default function NewJobCard() {
         // Attach the captured vehicle photo now that the vehicle exists. Fire and
         // forget — a failed upload shouldn't block navigating to the new job.
         if (job.vehiclePhotoUri && created.vehicleId) {
-          const uri = job.vehiclePhotoUri;
-          const ext = uri.split(".").pop()?.toLowerCase() ?? "jpg";
-          const form = new FormData();
-          form.append("image", { uri, name: `vehicle.${ext}`, type: `image/${ext === "jpg" ? "jpeg" : ext}` } as any);
-          void uploadVehiclePhoto(created.vehicleId, form).catch(() => {});
+          void uploadVehiclePhoto(created.vehicleId, photoForm(job.vehiclePhotoUri)).catch(() => {});
         }
         router.replace(`/job/${created.id}`);
       },

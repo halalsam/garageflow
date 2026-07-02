@@ -27,9 +27,18 @@ const LOCK_DY = -40; // drag-up distance that snaps to hands-free lock
 const MIC_FOLLOW_MIN = -160; // furthest the floating mic trails the finger
 const LOCK_TRAVEL_MAX = -72; // furthest the lock chip lifts with the finger
 
-// WhatsApp's grow/shrink: a fast ease-out with no overshoot (their standard
-// cubic-bezier(0.2, 0, 0, 1) swap curve), unlike a bouncy spring.
-const GROW = { duration: 180, easing: Easing.bezier(0.2, 0, 0, 1) };
+// Shrink back: a fast ease-out with no overshoot (WhatsApp's standard
+// cubic-bezier(0.2, 0, 0, 1) swap curve).
+const SHRINK = { duration: 140, easing: Easing.bezier(0.2, 0, 0, 1) };
+
+// Grow-on-arm: a light, stiff spring so the mic pops up under the finger with
+// a hint of overshoot instead of easing in flatly.
+const POP = { damping: 12, stiffness: 360, mass: 0.6 };
+
+// Return/lock travel: stiff + light so the mic snaps home. The previous
+// damping-heavy config (18/220) crawled through the last few dp and read as
+// sluggish.
+const SNAP = { damping: 15, stiffness: 380, mass: 0.7 };
 
 export type ComposerGesture = ReturnType<typeof useComposerGesture>;
 
@@ -69,9 +78,9 @@ export function useComposerGesture({
   // Restore the rest position of every animated value + latch.
   const settle = useCallback(() => {
     "worklet";
-    translateX.value = withSpring(0, { damping: 18, stiffness: 220 });
-    translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
-    micScale.value = withTiming(1, GROW);
+    translateX.value = withSpring(0, SNAP);
+    translateY.value = withSpring(0, SNAP);
+    micScale.value = withTiming(1, SHRINK);
     recording.value = false;
     cancelArmed.value = false;
     lockArmed.value = false;
@@ -128,7 +137,7 @@ export function useComposerGesture({
     .onStart(() => {
       "worklet";
       recording.value = true;
-      micScale.value = withTiming(2, GROW);
+      micScale.value = withSpring(2, POP);
       runOnJS(beginRecording)();
     })
     .onFinalize(() => {
@@ -166,9 +175,9 @@ export function useComposerGesture({
       translateY.value = Math.min(0, Math.max(LOCK_TRAVEL_MAX, e.translationY));
       if (!cancelArmed.value && e.translationY < LOCK_DY) {
         lockArmed.value = true;
-        translateX.value = withSpring(0, { damping: 18, stiffness: 220 });
-        translateY.value = withSpring(0, { damping: 18, stiffness: 220 });
-        micScale.value = withTiming(1, GROW);
+        translateX.value = withSpring(0, SNAP);
+        translateY.value = withSpring(0, SNAP);
+        micScale.value = withTiming(1, SHRINK);
         runOnJS(hLock)(); // heavy confirmation pulse
         runOnJS(promoteToLocked)();
       }

@@ -87,6 +87,11 @@ export function useTeam() {
   return useQuery({ queryKey: qk.team, queryFn: ({ signal }) => e.fetchTeam(signal) });
 }
 
+// The notifications inbox (persisted pushes + unread count for badges).
+export function useNotifications() {
+  return useQuery({ queryKey: qk.notifications, queryFn: ({ signal }) => e.fetchNotifications(signal) });
+}
+
 export function useDashboard() {
   return useQuery({ queryKey: qk.dashboard, queryFn: ({ signal }) => e.fetchDashboard(signal) });
 }

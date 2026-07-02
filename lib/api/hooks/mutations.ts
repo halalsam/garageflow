@@ -22,6 +22,17 @@ export function useRecordPayment(invoiceId: string) {
   });
 }
 
+// Mark the whole notifications inbox read (fired when the inbox opens).
+export function useMarkNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => e.markNotificationsRead(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.notifications });
+    },
+  });
+}
+
 // Add a business expense.
 export function useAddExpense() {
   const qc = useQueryClient();

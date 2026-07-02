@@ -37,6 +37,7 @@ export const qk = {
   vehicles: (plate?: string) => ["vehicles", plate ?? ""] as const,
   customers: (query?: string) => ["customers", query ?? ""] as const,
   team: ["team"] as const,
+  notifications: ["notifications"] as const,
   dashboard: ["dashboard"] as const,
   finance: {
     summary: ["finance", "summary"] as const,
